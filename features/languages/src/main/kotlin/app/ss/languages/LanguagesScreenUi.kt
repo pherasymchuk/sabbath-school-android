@@ -22,6 +22,7 @@
 
 package app.ss.languages
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -31,18 +32,24 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.dp
 import app.ss.design.compose.extensions.haptics.LocalSsHapticFeedback
 import app.ss.design.compose.theme.SsTheme
 import app.ss.design.compose.widget.appbar.SsTopAppBar
@@ -51,6 +58,7 @@ import app.ss.design.compose.widget.appbar.TopAppBarType
 import app.ss.design.compose.widget.divider.Divider
 import app.ss.design.compose.widget.icon.IconBox
 import app.ss.design.compose.widget.icon.Icons
+import app.ss.design.compose.widget.scaffold.HazeScaffold
 import app.ss.design.compose.widget.search.SearchInput
 import app.ss.languages.list.LanguagesList
 import app.ss.languages.state.Event
@@ -58,53 +66,57 @@ import app.ss.languages.state.LanguagesEvent
 import app.ss.languages.state.State
 import com.slack.circuit.codegen.annotations.CircuitInject
 import dagger.hilt.components.SingletonComponent
+import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
+import dev.chrisbanes.haze.materials.HazeMaterials
 import ss.libraries.circuit.navigation.LanguagesScreen
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalHazeMaterialsApi::class)
 @CircuitInject(LanguagesScreen::class, SingletonComponent::class)
 @Composable
 fun LanguagesScreenUi(state: State, modifier: Modifier) {
     val hapticFeedback = LocalSsHapticFeedback.current
-    Scaffold(
-      modifier = modifier,
-      topBar = {
-        SearchView(
-            onQuery = { (state as? State.Languages)?.eventSink?.invoke(LanguagesEvent.Search(it)) },
-            onNavBack = {
-                hapticFeedback.performClick()
-                when (state) {
-                    is State.Languages -> state.eventSink(LanguagesEvent.NavBack)
-                    is State.Loading -> state.eventSink(Event.NavBack)
-                }
-            },
-            modifier =
-                Modifier.windowInsetsPadding(
-                    WindowInsets.safeDrawing.only(WindowInsetsSides.Top),
-                ),
-        )
-      },
-  ) { paddingValues ->
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues),
-    ) {
-      Divider()
-
-      when (state) {
-        is State.Loading -> Box(Modifier.weight(1f))
-        is State.Languages ->
-            LanguagesList(
-                models = state.models,
-                onItemClick = {
-                    state.eventSink(LanguagesEvent.Select(it))
+    HazeScaffold(
+        modifier = modifier,
+        topBar = {
+            SearchView(
+                onQuery = { (state as? State.Languages)?.eventSink?.invoke(LanguagesEvent.Search(it)) },
+                onNavBack = {
                     hapticFeedback.performClick()
+                    when (state) {
+                        is State.Languages -> state.eventSink(LanguagesEvent.NavBack)
+                        is State.Loading -> state.eventSink(Event.NavBack)
+                    }
                 },
-                modifier = Modifier.weight(1f),
+                modifier =
+                    Modifier.windowInsetsPadding(
+                        WindowInsets.safeDrawing.only(WindowInsetsSides.Top),
+                    ),
             )
-      }
+        },
+        blurTopBar = true,
+        hazeStyle = HazeMaterials.regular()
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize(),
+        ) {
+            Divider()
+
+            when (state) {
+                is State.Loading -> Box(Modifier.weight(1f))
+                is State.Languages ->
+                    LanguagesList(
+                        models = state.models,
+                        onItemClick = {
+                            state.eventSink(LanguagesEvent.Select(it))
+                            hapticFeedback.performClick()
+                        },
+                        contentPadding = paddingValues,
+                        modifier = Modifier.weight(1f),
+                    )
+            }
+        }
     }
-  }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -112,30 +124,46 @@ fun LanguagesScreenUi(state: State, modifier: Modifier) {
 private fun SearchView(
     onQuery: (String) -> Unit,
     onNavBack: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
-  var queryValue by rememberSaveable { mutableStateOf("") }
-
-  SsTopAppBar(
-      spec = TopAppBarSpec(TopAppBarType.Small),
-      title = {
-        SearchInput(
-            value = queryValue,
-            onQueryChange = {
-              queryValue = it
-              onQuery(it)
-            },
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = "Search Languages",
+    var queryValue by rememberSaveable { mutableStateOf("") }
+    SsTopAppBar(
+        spec = TopAppBarSpec(TopAppBarType.Small),
+        title = {
+            SearchInput(
+                value = queryValue,
+                onQueryChange = {
+                    queryValue = it
+                    onQuery(it)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = "Search Languages",
+            )
+        },
+        modifier = modifier,
+        navigationIcon = {
+            IconButton(
+                onClick = onNavBack
+            ) {
+                IconBox(
+                    icon = Icons.ArrowBackDefault,
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .size(32.dp)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                        .padding(4.dp)
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = Color.Transparent,
+            scrolledContainerColor = Color.Transparent,
         )
-      },
-      modifier = modifier,
-      navigationIcon = { IconButton(onClick = onNavBack) { IconBox(icon = Icons.ArrowBack) } },
-  )
+    )
 }
 
 @PreviewLightDark
 @Composable
 private fun SearchPreview() {
-  SsTheme { Surface { SearchView(onQuery = {}, onNavBack = {}) } }
+    SsTheme { Surface { SearchView(onQuery = {}, onNavBack = {}) } }
 }

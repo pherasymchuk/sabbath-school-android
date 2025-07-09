@@ -25,20 +25,25 @@ package app.ss.design.compose.widget.search
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -94,36 +99,36 @@ fun SearchInput(
         interactionSource = interactionSource,
         cursorBrush = SolidColor(SsTheme.colors.primary),
         decorationBox =
-        @Composable { innerTextField ->
-            TextFieldDefaults.DecorationBox(
-                value = value,
-                visualTransformation = visualTransformation,
-                innerTextField = innerTextField,
-                placeholder = {
-                    Text(
-                        text = placeholder,
-                        style = textStyle,
-                        color = SsTheme.colors.secondaryForeground
-                    )
-                },
-                trailingIcon = {
-                    ClearIcon(query = value) { onQueryChange("") }
-                },
-                singleLine = true,
-                enabled = enabled,
-                interactionSource = interactionSource,
-                shape = RectangleShape,
-                contentPadding = PaddingValues(4.dp),
-                container = {}
-            )
-        }
+            @Composable { innerTextField ->
+                TextFieldDefaults.DecorationBox(
+                    value = value,
+                    visualTransformation = visualTransformation,
+                    innerTextField = innerTextField,
+                    placeholder = {
+                        Text(
+                            text = placeholder,
+                            style = textStyle,
+                            color = SsTheme.colors.secondaryForeground
+                        )
+                    },
+                    trailingIcon = {
+                        ClearIcon(query = value) { onQueryChange("") }
+                    },
+                    singleLine = true,
+                    enabled = enabled,
+                    interactionSource = interactionSource,
+                    shape = RectangleShape,
+                    contentPadding = PaddingValues(4.dp),
+                    container = {}
+                )
+            }
     )
 }
 
 @Composable
 private fun ClearIcon(
     query: String,
-    onClear: () -> Unit
+    onClear: () -> Unit,
 ) {
     AnimatedVisibility(
         visible = query.isNotEmpty(),
@@ -131,7 +136,13 @@ private fun ClearIcon(
         exit = fadeOut()
     ) {
         IconButton(onClick = onClear) {
-            IconBox(icon = Icons.Close)
+            IconBox(
+                icon = Icons.Close, modifier = Modifier
+                    .clip(RoundedCornerShape(4.dp))
+                    .size(32.dp)
+                    .background(MaterialTheme.colorScheme.errorContainer)
+                    .padding(4.dp)
+            )
         }
     }
 }

@@ -22,6 +22,7 @@
 
 package app.ss.languages.list
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -31,17 +32,23 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import app.ss.design.compose.theme.BottomCornersShape
 import app.ss.design.compose.theme.SsTheme
-import app.ss.design.compose.widget.divider.Divider
+import app.ss.design.compose.theme.TopCornersShape
+import app.ss.design.compose.widget.divider.ExpressiveDivider
 import app.ss.design.compose.widget.icon.IconBox
 import app.ss.design.compose.widget.icon.Icons
 import app.ss.languages.state.LanguageUiModel
@@ -52,21 +59,33 @@ internal fun LanguagesList(
     models: ImmutableList<LanguageUiModel>,
     onItemClick: (LanguageUiModel) -> Unit,
     modifier: Modifier = Modifier,
-    mainPadding: PaddingValues = PaddingValues(0.dp)
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    mainPadding: PaddingValues = PaddingValues(0.dp),
 ) {
     LazyColumn(
         modifier = modifier,
+        contentPadding = contentPadding
     ) {
-        items(models, key = { it.code }) { model ->
-
+        item {
+            Spacer(modifier = Modifier.padding(4.dp))
+        }
+        itemsIndexed(items = models, key = { index, model -> model.code }) { index, model ->
+            val cornerShape = when {
+                index == 0 && 0 == models.lastIndex -> RoundedCornerShape(16.dp)
+                index == 0 -> TopCornersShape
+                index == models.lastIndex -> BottomCornersShape
+                else -> RectangleShape
+            }
             LanguageItem(
                 model = model,
                 modifier = Modifier
-                    .clickable { onItemClick(model) }
                     .animateItem()
+                    .padding(horizontal = 16.dp)
+                    .clip(cornerShape)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                    .clickable { onItemClick(model) }
             )
-
-            Divider()
+            ExpressiveDivider()
         }
 
         item {
@@ -78,7 +97,7 @@ internal fun LanguagesList(
 @Composable
 private fun LanguageItem(
     model: LanguageUiModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier
