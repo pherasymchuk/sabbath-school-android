@@ -164,7 +164,9 @@ internal fun SelectionBlockContainer(
                                     label = context.getString(L10nR.string.ss_action_underline),
                                     leadingIcon = BlockKitR.drawable.ic_format_underlined,
                                 ) {
-                                    contextMenuState = ContextMenuType.UNDERLINE
+                                    // Underline colors not supported yet. use default for now
+                                    onUnderline(HighlightColor.BROWN)
+                                    close()
                                 }
                                 separator()
                                 if (canSearchSelection) {
@@ -245,71 +247,6 @@ internal fun SelectionBlockContainer(
                                     close()
                                 }
                             }
-                            ContextMenuType.UNDERLINE -> {
-                                item(
-                                    key = ContextMenuKey.Underline.Remove,
-                                    label = "❌",
-                                ) {
-                                    onRemoveUnderline()
-                                    close()
-                                }
-                                separator()
-                                item(
-                                    key = ContextMenuKey.Underline.Yellow,
-                                    label = "🟡",
-                                ) {
-                                    onUnderline(HighlightColor.YELLOW)
-                                    close()
-                                }
-                                separator()
-                                item(
-                                    key = ContextMenuKey.Underline.Green,
-                                    label = "🟢",
-                                ) {
-                                    onUnderline(HighlightColor.GREEN)
-                                    close()
-                                }
-                                separator()
-                                item(
-                                    key = ContextMenuKey.Underline.Purple,
-                                    label = "🟣",
-                                ) {
-                                    onUnderline(HighlightColor.PURPLE)
-                                    close()
-                                }
-                                separator()
-                                item(
-                                    key = ContextMenuKey.Underline.Blue,
-                                    label = "🔵",
-                                ) {
-                                    onUnderline(HighlightColor.BLUE)
-                                    close()
-                                }
-                                separator()
-                                item(
-                                    key = ContextMenuKey.Underline.Orange,
-                                    label = "🟠",
-                                ) {
-                                    onUnderline(HighlightColor.ORANGE)
-                                    close()
-                                }
-                                separator()
-                                item(
-                                    key = ContextMenuKey.Underline.Brown,
-                                    label = "🟤",
-                                ) {
-                                    onUnderline(HighlightColor.BROWN)
-                                    close()
-                                }
-                                separator()
-                                item(
-                                    key = ContextMenuKey.Underline.Red,
-                                    label = "🔴",
-                                ) {
-                                    onUnderline(HighlightColor.RED)
-                                    close()
-                                }
-                            }
                         }
 
                         separator()
@@ -318,7 +255,6 @@ internal fun SelectionBlockContainer(
                         when (contextMenuState) {
                             ContextMenuType.DEFAULT -> selection.length > 0
                             ContextMenuType.HIGHLIGHT -> it.key is ContextMenuKey.Highlight
-                            ContextMenuType.UNDERLINE -> it.key is ContextMenuKey.Underline
                         }
                     }
             )

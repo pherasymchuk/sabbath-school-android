@@ -54,20 +54,6 @@ internal sealed interface ContextMenuKey {
         data object Red : Highlight
         data object Remove : Highlight
     }
-
-    /**
-     * Underline color options for context menu.
-     */
-    sealed interface Underline : ContextMenuKey {
-        data object Blue : Underline
-        data object Yellow : Underline
-        data object Orange : Underline
-        data object Green : Underline
-        data object Purple : Underline
-        data object Brown : Underline
-        data object Red : Underline
-        data object Remove : Underline
-    }
 }
 
 
@@ -76,10 +62,8 @@ internal sealed interface ContextMenuKey {
  *
  * - DEFAULT: Standard context menu.
  * - HIGHLIGHT: Menu for highlight actions.
- * - UNDERLINE: Menu for underline actions.
  */
 internal enum class ContextMenuType {
     DEFAULT,
     HIGHLIGHT,
-    UNDERLINE,
 }
