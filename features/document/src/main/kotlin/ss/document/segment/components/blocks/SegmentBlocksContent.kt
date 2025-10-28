@@ -24,6 +24,7 @@ package ss.document.segment.components.blocks
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -33,9 +34,10 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -57,13 +59,17 @@ internal fun SegmentBlocksContent(
     titleBelowCover: Boolean,
     modifier: Modifier = Modifier,
     userInputState: UserInputState,
-    listState : LazyListState = rememberLazyListState(),
+    listState: LazyListState = rememberLazyListState(),
     onHandleUri: (String, BlockData?) -> Unit = { _, _ -> },
     onHandleReference: (ReferenceModel) -> Unit = { _ -> }
 ) {
     val readerStyle = LocalReaderStyle.current
     val contentColor = readerStyle.theme.primaryForeground()
     val segmentStyle = segment.style?.segment ?: LocalSegmentStyle.current
+
+    // Stabilize the lambdas
+    val stableOnHandleUri = remember(onHandleUri) { onHandleUri }
+    val stableOnHandleReference = remember(onHandleReference) { onHandleReference }
 
     LazyColumn(
         modifier = modifier
@@ -100,19 +106,35 @@ internal fun SegmentBlocksContent(
                     date = segment.date,
                     contentColor = contentColor,
                     style = segmentStyle,
-                    modifier = Modifier.fillMaxWidth().animateItem(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .animateItem(),
                 )
             }
         }
 
-        items(segment.blocks.orEmpty(), key = { it.id }) { block ->
-            BlockContent(
-                blockItem = block,
-                modifier = Modifier,
-                userInputState = userInputState,
-                onHandleUri = onHandleUri,
-                onHandleReference = onHandleReference,
-            )
+
+        // Using a single `item` with a `Column` to wrap the blocks avoids LazyColumn's
+        // per-item recycling overhead. This prevents scroll jitter caused by the high
+        // composition cost of individual `BlockContent` items.
+        item(key = "blocks-container", contentType = "blocks-container") {
+            Column(
+                modifier = Modifier.animateItem(),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
+            ) {
+                segment.blocks.orEmpty().forEach { block ->
+                    // We manually provide a key here for stability within the Column
+                    key(block.id) {
+                        BlockContent(
+                            blockItem = block,
+                            modifier = Modifier,
+                            userInputState = userInputState,
+                            onHandleUri = stableOnHandleUri,
+                            onHandleReference = stableOnHandleReference,
+                        )
+                    }
+                }
+            }
         }
 
         item(key = "spacer") { Spacer(Modifier.height(48.dp)) }
