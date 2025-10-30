@@ -112,6 +112,7 @@ internal class ResourcesRepositoryImpl @Inject constructor(
             .onEach { if (it == null) syncHelper.syncLanguages()  }
             .filterNotNull()
             .map { entity -> entity.toModel() }
+            .onStart { syncHelper.syncLanguages() }
             .catch { Timber.e(it) }
             .flowOn(dispatcherProvider.io)
 
