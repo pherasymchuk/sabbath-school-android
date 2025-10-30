@@ -95,7 +95,7 @@ internal class ResourcesRepositoryImpl @Inject constructor(
 ) : ResourcesRepository {
 
     override fun languages(query: String?): Flow<List<LanguageModel>> {
-        return return (if (query.isNullOrEmpty()) {
+        return (if (query.isNullOrEmpty()) {
             languagesDao.get().onStart { syncHelper.syncLanguages() }
         } else {
             languagesDao.search("%$query%")
