@@ -32,6 +32,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.TextFieldValue
@@ -70,6 +71,7 @@ internal fun MarkdownTextInput(
         readOnly = true,
         textStyle = style.copy(
             textAlign = textAlign ?: style.textAlign,
+            platformStyle = PlatformTextStyle(includeFontPadding = true)
         ),
         maxLines = maxLines,
         onTextLayout = {

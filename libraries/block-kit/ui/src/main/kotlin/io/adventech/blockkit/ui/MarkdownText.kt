@@ -43,6 +43,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
@@ -155,7 +156,9 @@ fun MarkdownText(
             }
             .drawBehind(extendedSpans),
         color = color,
-        style = style,
+        style = style.copy(
+            platformStyle = PlatformTextStyle(includeFontPadding = true)
+        ),
         textAlign = textAlign,
         maxLines = maxLines,
         overflow = overflow,

@@ -32,6 +32,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
@@ -106,6 +107,7 @@ object Styler {
             color = textColor(blockStyle, template),
             fontSize = textSize(blockStyle, template),
             fontFamily = fontFamily(blockStyle, template),
+            platformStyle = PlatformTextStyle(includeFontPadding = true)
         )
     }
 
