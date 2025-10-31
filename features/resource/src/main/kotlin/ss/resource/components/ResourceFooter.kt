@@ -44,7 +44,6 @@ import androidx.compose.runtime.Stable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -55,7 +54,6 @@ import kotlinx.collections.immutable.ImmutableList
 import ss.resource.components.spec.CreditSpec
 import ss.resource.components.spec.FeatureSpec
 import java.util.Calendar
-import app.ss.translations.R as L10n
 
 internal fun LazyListScope.footer(
     credits: ImmutableList<CreditSpec>,
@@ -83,24 +81,6 @@ internal fun LazyListScope.footer(
             title = credit.name,
             description = credit.value,
             modifier = Modifier
-        )
-    }
-
-    item {
-        Text(
-            text = stringResource(id = L10n.string.ss_copyright, year),
-            style = SsTheme.typography.bodySmall.copy(
-                fontSize = 15.sp
-            ),
-            color = if (SsTheme.colors.isDark) {
-                SsColors.BaseGrey3
-            } else SsColors.BaseGrey2,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    horizontal = 16.dp,
-                    vertical = 10.dp
-                )
         )
     }
 
