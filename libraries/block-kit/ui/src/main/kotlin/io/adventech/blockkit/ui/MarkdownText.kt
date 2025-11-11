@@ -81,8 +81,10 @@ import io.adventech.blockkit.ui.style.font.LocalFontFamilyProvider
 import io.adventech.blockkit.ui.style.rememberAttributedTextColorOverride
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.withContext
 import me.saket.extendedspans.ExtendedSpans
 import me.saket.extendedspans.RoundedCornerSpanPainter
 import me.saket.extendedspans.RoundedCornerSpanPainter.TextPaddingValues
@@ -143,7 +145,7 @@ fun MarkdownText(
         },
         modifier = modifier
             .fillMaxWidth()
-            .pointerInput(Unit) {
+            .pointerInput(styledText) {
                 detectTapGestures { offset ->
                     layoutResult.value?.let { layoutResult ->
                         val position = layoutResult.getOffsetForPosition(offset)
@@ -203,8 +205,7 @@ internal fun rememberMarkdownText(
     attributedTextParser: AttributedTextParser = remember { AttributedTextParser() }
 ): AnnotatedString {
     val parser = remember { Parser.builder().build() }
-    val spanProcessor = remember { SpanProcessor() }
-    val block = remember(markdownText) { spanProcessor.process(markdownText) }
+    val block by rememberBlock(markdownText)
 
     val defaultFontFamily = Styler.defaultFontFamily()
     val fonts by rememberMarkdownFonts(block, attributedTextParser, defaultFontFamily)
@@ -257,6 +258,20 @@ internal fun rememberMarkdownText(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun rememberBlock(markdownText: String): State<Block> {
+    val spanProcessor = remember { SpanProcessor() }
+
+    return produceState(
+        initialValue = Block(spans = persistentListOf()),
+        key1 = markdownText,
+    ) {
+        withContext(Dispatchers.Default) {
+            value = spanProcessor.process(markdownText)
         }
     }
 }

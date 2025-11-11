@@ -47,7 +47,9 @@ import io.adventech.blockkit.model.resource.Segment
 import io.adventech.blockkit.model.resource.SegmentType
 import io.adventech.blockkit.ui.style.font.FontFamilyProvider
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.delay
 import org.joda.time.DateTime
 import ss.document.components.DocumentTopAppBarAction
 import ss.document.producer.ReaderStyleStateProducer
@@ -162,7 +164,7 @@ class DocumentPresenter @AssistedInject constructor(
         }
 
         return when {
-            resourceDocument == null -> State.Loading(false, eventSink)
+            resourceDocument == null || documentPages.isEmpty() -> State.Loading(selectedPage?.hasCover() == true, eventSink)
             else -> State.Success(
                 title = selectedPage?.title ?: resourceDocument.title,
                 hasCover = selectedPage?.hasCover() == true,
@@ -190,25 +192,30 @@ class DocumentPresenter @AssistedInject constructor(
     }
 
     @Composable
-    private fun rememberDocumentSegments(document: ResourceDocument?) = rememberRetained(document) {
-        mutableStateOf(
-            (document?.segments?.map { it.copy(cover = it.cover ?: document.cover) } ?: emptyList())
+    private fun rememberDocumentSegments(document: ResourceDocument?) =
+        produceRetainedState(persistentListOf(), document) {
+            if (value == persistentListOf<Segment>()) {
+                delay(150)
+            }
+            value = (document?.segments?.map { it.copy(cover = it.cover ?: document.cover) } ?: emptyList())
                 .toImmutableList()
-        )
     }
 
     private fun ImmutableList<Segment>.defaultPage(): Segment? {
-        screen.segmentIndex?.toIntOrNull()?.let { index ->
-            getOrNull(index)?.let { return it }
-        }
-        forEachIndexed { index, segment ->
-            val date = segment.date?.let { DateHelper.parseDate(it) }
+        // 1. Check for index and return immediately if found.
+        val indexedSegment = screen.segmentIndex
+            ?.toIntOrNull()
+            ?.let { getOrNull(it) }
 
-            if (date?.isEqual(today) == true) {
-                return segment
-            }
+        if (indexedSegment != null) {
+            return indexedSegment
         }
-        return firstOrNull()
+
+        // 2. Fallback to today's date or the first segment.
+        return firstOrNull { segment ->
+            val date = segment.date?.let { DateHelper.parseDate(it) }
+            date?.isEqual(today) == true
+        } ?: firstOrNull()
     }
 
     private fun checkPdfOnlySegment(resourceDocument: ResourceDocument?) {
@@ -254,8 +261,8 @@ internal fun Segment.hasCover(): Boolean {
 }
 
 internal fun sendSegmentOverlayEvent(overlayState: DocumentOverlayState, event: SegmentOverlayEvent) {
-    when (val state = overlayState) {
-        is SegmentOverlayState.None -> state.eventSink(event)
+    when (overlayState) {
+        is SegmentOverlayState.None -> overlayState.eventSink(event)
         else -> Unit
     }
 }

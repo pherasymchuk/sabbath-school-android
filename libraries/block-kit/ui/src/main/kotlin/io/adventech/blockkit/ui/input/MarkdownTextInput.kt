@@ -78,7 +78,7 @@ internal fun MarkdownTextInput(
             layoutResult.value = it
             extendedSpans.onTextLayout(it)
         },
-        interactionSource = remember { MutableInteractionSource() }
+        interactionSource = remember(styledText) { MutableInteractionSource() }
             .also { interactionSource ->
                 LaunchedEffect(interactionSource) {
                     interactionSource.interactions.collect { interaction ->

@@ -22,11 +22,11 @@
 
 package ss.document.components
 
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -41,7 +41,6 @@ import io.adventech.blockkit.ui.input.UserInputState
 import kotlinx.collections.immutable.ImmutableList
 import ss.document.segment.SegmentUi
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DocumentPager(
     segments: ImmutableList<Segment>,
@@ -64,11 +63,11 @@ fun DocumentPager(
         pageCount = { segments.size },
     )
 
-    var pageListStateMap = remember { mutableMapOf<Int, LazyListState>() }
+    val pageListStateMap = remember { mutableMapOf<Int, LazyListState>() }
 
     HorizontalPager(
         state = pagerState,
-        modifier = modifier,
+        modifier = modifier.fillMaxSize(),
         verticalAlignment = Alignment.Top,
         beyondViewportPageCount = 2,
     ) { page ->
@@ -90,7 +89,7 @@ fun DocumentPager(
             resourceIndex = resourceIndex,
             titleBelowCover = titleBelowCover,
             userInputState = userInputState,
-            modifier = Modifier,
+            modifier = Modifier.fillMaxSize(),
             listState = listState,
             onNavBack = onNavBack,
             onCollapseChange = onCollapseChange,
