@@ -48,3 +48,5 @@ captures/
 
 # Kotlin 2.0
 .kotlin/
+
+/ai_docs/
