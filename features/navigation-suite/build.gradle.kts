@@ -38,24 +38,23 @@ android {
     androidResources.enable = true
 }
 
-ksp {
-    arg("circuit.codegen.mode", "hilt")
-}
-
 dependencies {
+    implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.androidx.navigation3.runtime)
     implementation(libs.google.hilt.android)
     implementation(libs.kotlinx.collectionsImmutable)
     implementation(libs.material3.adaptive.navigation.suite)
     implementation(libs.timber)
     implementation(projects.common.designCompose)
     implementation(projects.common.translations)
-    implementation(projects.libraries.circuit.api)
+    implementation(projects.features.feed)
     implementation(projects.libraries.foundation.coroutines)
+    implementation(projects.libraries.navigation3.api)
+    implementation(projects.libraries.navigation3.impl)
     implementation(projects.libraries.prefs.api)
     implementation(projects.services.resources.api)
 
     testImplementation(libs.bundles.testing.common)
 
-    ksp(libs.circuit.codegen)
     ksp(libs.google.hilt.compiler)
 }

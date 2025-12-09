@@ -26,32 +26,33 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import app.ss.design.compose.theme.SsTheme
-import com.slack.circuit.backstack.rememberSaveableBackStack
-import com.slack.circuit.foundation.Circuit
-import com.slack.circuit.foundation.CircuitCompositionLocals
-import com.slack.circuit.foundation.NavigableCircuitContent
-import com.slack.circuit.foundation.rememberCircuitNavigator
-import com.slack.circuit.overlay.ContentWithOverlays
-import com.slack.circuitx.android.rememberAndroidScreenAwareNavigator
-import com.slack.circuitx.gesturenavigation.GestureNavigationDecorationFactory
+import com.cryart.sabbathschool.core.navigation.AppNavigator
 import dagger.hilt.android.AndroidEntryPoint
-import ss.services.circuit.impl.navigator.AndroidSupportingNavigator
+import ss.libraries.navigation3.EntryProviderBuilder
+import ss.libraries.navigation3.SsNavHost
+import ss.libraries.navigation3.rememberSsNavigator
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class HomeActivity : ComponentActivity() {
 
     @Inject
-    lateinit var circuit: Circuit
+    lateinit var entryBuilders: Set<@JvmSuppressWildcards EntryProviderBuilder>
 
     @Inject
-    lateinit var supportingNavigatorFactory: AndroidSupportingNavigator.Factory
+    lateinit var appNavigator: AppNavigator
+
+    private val viewModel: HomeViewModel by viewModels()
 
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,28 +62,29 @@ class HomeActivity : ComponentActivity() {
 
         setContent {
             val windowSizeClass = calculateWindowSizeClass(activity = this)
-            CircuitCompositionLocals(circuit = circuit) {
-                SsTheme(windowSizeClass = windowSizeClass) {
-                    val backstack = rememberSaveableBackStack(HomeScreen)
-                    val circuitNavigator = rememberCircuitNavigator(backstack)
-                    val supportingNavigator = remember(circuitNavigator) {
-                        supportingNavigatorFactory.create(circuitNavigator, this)
+            val startupState by viewModel.startupState.collectAsState()
+
+            // Keep splash screen visible while loading
+            splashScreen.setKeepOnScreenCondition { startupState is StartupState.Loading }
+
+            SsTheme(windowSizeClass = windowSizeClass) {
+                when (val state = startupState) {
+                    is StartupState.Loading -> {
+                        // Show empty box while determining start screen
+                        Box(modifier = Modifier.fillMaxSize())
                     }
-                    val navigator = rememberAndroidScreenAwareNavigator(supportingNavigator, this)
-                    ContentWithOverlays {
-                        NavigableCircuitContent(
-                            navigator = navigator,
-                            backStack = backstack,
-                            modifier = Modifier,
-                            circuit = circuit,
-                            decoratorFactory =
-                                remember(navigator) {
-                                    GestureNavigationDecorationFactory(onBackInvoked = navigator::pop)
-                                },
+                    is StartupState.Ready -> {
+                        val navigatorState = rememberSsNavigator(
+                            startKey = state.startKey,
+                            activity = this,
+                            appNavigator = appNavigator,
+                        )
+                        SsNavHost(
+                            navigatorState = navigatorState,
+                            entryBuilders = entryBuilders,
+                            modifier = Modifier.fillMaxSize(),
                         )
                     }
-
-                    splashScreen.setKeepOnScreenCondition { backstack.topRecord?.screen == HomeScreen }
                 }
             }
         }

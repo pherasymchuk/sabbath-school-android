@@ -22,54 +22,63 @@
 
 package com.cryart.sabbathschool.ui.home
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import app.ss.auth.AuthRepository
 import com.cryart.sabbathschool.reminder.DailyReminderManager
-import com.slack.circuit.codegen.annotations.CircuitInject
-import com.slack.circuit.runtime.Navigator
-import com.slack.circuit.runtime.presenter.Presenter
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
-import dagger.hilt.components.SingletonComponent
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import ss.libraries.appwidget.api.AppWidgetHelper
-import ss.libraries.circuit.navigation.HomeNavScreen
-import ss.libraries.circuit.navigation.LoginScreen
+import ss.libraries.navigation3.HomeNavKey
+import ss.libraries.navigation3.LoginKey
 import ss.prefs.api.SSPrefs
+import javax.inject.Inject
 
-class HomePresenter @AssistedInject constructor(
-    @Assisted private val navigator: Navigator,
+/** Initial startup state - determines whether user needs to log in or can proceed to home. */
+sealed interface StartupState {
+    data object Loading : StartupState
+    data class Ready(val startKey: androidx.navigation3.runtime.NavKey) : StartupState
+}
+
+@HiltViewModel
+class HomeViewModel @Inject constructor(
     private val ssPrefs: SSPrefs,
     private val authRepository: AuthRepository,
     private val dailyReminderManager: DailyReminderManager,
     private val appWidgetHelper: AppWidgetHelper,
-) : Presenter<HomeScreen.State> {
+) : ViewModel() {
 
-    @CircuitInject(HomeScreen::class, SingletonComponent::class)
-    @AssistedFactory
-    interface Factory {
-        fun create(navigator: Navigator): HomePresenter
+    private val _startupState = MutableStateFlow<StartupState>(StartupState.Loading)
+    val startupState: StateFlow<StartupState> = _startupState.asStateFlow()
+
+    init {
+        determineStartScreen()
+        refreshAppWidget()
     }
 
-    @Composable
-    override fun present(): HomeScreen.State {
-        LaunchedEffect(key1 = Unit) {
+    private fun determineStartScreen() {
+        viewModelScope.launch {
             val user = authRepository.getUser().getOrNull()
 
             if (user != null && ssPrefs.reminderEnabled() && ssPrefs.isReminderScheduled().not()) {
                 dailyReminderManager.scheduleReminder()
             }
 
-            val screen = when {
-                user == null -> LoginScreen
-                else -> HomeNavScreen
+            val startKey: androidx.navigation3.runtime.NavKey = when {
+                user == null -> LoginKey
+                else -> HomeNavKey
             }
-            navigator.resetRoot(screen)
+
+            _startupState.value = StartupState.Ready(startKey)
         }
+    }
 
-        LaunchedEffect(Unit) { appWidgetHelper.refreshAll() }
-
-        return HomeScreen.State
+    private fun refreshAppWidget() {
+        viewModelScope.launch {
+            appWidgetHelper.refreshAll()
+        }
     }
 }

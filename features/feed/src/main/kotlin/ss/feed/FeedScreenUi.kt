@@ -47,15 +47,30 @@ import ss.feed.components.view.FeedLoadingView
 import ss.libraries.navigation3.LocalSsNavigator
 import ss.services.auth.overlay.AccountDialog
 
+/** Feed type enum for Navigation 3 integration. */
+enum class FeedType {
+    SABBATH_SCHOOL,
+    ALIVE_IN_JESUS,
+    PERSONAL_MINISTRIES,
+    DEVOTIONALS,
+    EXPLORE,
+}
+
 @Suppress("DEPRECATION")
 @Composable
 fun FeedScreen(
     modifier: Modifier = Modifier,
-    viewModel: FeedViewModel = hiltViewModel(),
+    feedType: FeedType = FeedType.SABBATH_SCHOOL,
+    viewModel: FeedViewModel = hiltViewModel(
+        key = feedType.name // Use feedType as key to get separate ViewModels per type
+    ),
 ) {
     val navigator = LocalSsNavigator.current
     LaunchedEffect(navigator) {
         viewModel.setNavigator(navigator)
+    }
+    LaunchedEffect(feedType) {
+        viewModel.setFeedType(feedType)
     }
 
     val uiState by viewModel.uiState.collectAsState()

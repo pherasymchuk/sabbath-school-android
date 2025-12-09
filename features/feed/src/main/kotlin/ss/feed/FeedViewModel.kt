@@ -27,7 +27,6 @@ import android.content.Intent
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.core.app.ShareCompat
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.ss.auth.AuthRepository
@@ -47,7 +46,6 @@ import ss.feed.model.FeedResourceSpec
 import ss.feed.model.toSpec
 import ss.libraries.navigation3.CustomTabsKey
 import ss.libraries.navigation3.FeedGroupKey
-import ss.libraries.navigation3.FeedKey
 import ss.libraries.navigation3.LanguagesKey
 import ss.libraries.navigation3.LegacyDestinationKey
 import ss.libraries.navigation3.LoginKey
@@ -62,14 +60,12 @@ import app.ss.translations.R as L10nR
 
 @HiltViewModel
 class FeedViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
     private val authRepository: AuthRepository,
     private val resourcesRepository: ResourcesRepository,
 ) : ViewModel() {
 
-    private val feedType: FeedType = savedStateHandle.get<String>("feedType")
-        ?.let { FeedType.valueOf(it) }
-        ?: FeedType.SS
+    private var feedType: FeedType = FeedType.SS
+    private var feedTypeSet = false
 
     private val _uiState = MutableStateFlow<FeedUiState>(FeedUiState.Loading("", null))
     val uiState: StateFlow<FeedUiState> = _uiState.asStateFlow()
@@ -82,11 +78,25 @@ class FeedViewModel @Inject constructor(
 
     init {
         loadUserInfo()
-        loadFeed()
     }
 
     fun setNavigator(navigator: SsNavigator) {
         this.navigator = navigator
+    }
+
+    fun setFeedType(type: ss.feed.FeedType) {
+        val newFeedType = when (type) {
+            ss.feed.FeedType.SABBATH_SCHOOL -> FeedType.SS
+            ss.feed.FeedType.ALIVE_IN_JESUS -> FeedType.AIJ
+            ss.feed.FeedType.PERSONAL_MINISTRIES -> FeedType.PM
+            ss.feed.FeedType.DEVOTIONALS -> FeedType.DEVO
+            ss.feed.FeedType.EXPLORE -> FeedType.EXPLORE
+        }
+        if (!feedTypeSet || feedType != newFeedType) {
+            feedType = newFeedType
+            feedTypeSet = true
+            loadFeed()
+        }
     }
 
     private fun loadUserInfo() {

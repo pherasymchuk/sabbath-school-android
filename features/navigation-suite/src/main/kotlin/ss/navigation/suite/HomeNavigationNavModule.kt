@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024. Adventech <info@adventech.io>
+ * Copyright (c) 2025. Adventech <info@adventech.io>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,7 +20,6 @@
  * THE SOFTWARE.
  */
 
-
 package ss.navigation.suite
 
 import androidx.compose.animation.AnimatedContent
@@ -40,42 +39,102 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffo
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.navigation.compose.hiltViewModel
 import app.ss.design.compose.extensions.haptics.LocalSsHapticFeedback
 import app.ss.design.compose.widget.scaffold.HazeScaffold
-import com.slack.circuit.codegen.annotations.CircuitInject
-import com.slack.circuit.foundation.CircuitContent
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import ss.libraries.circuit.navigation.HomeNavScreen
+import dagger.multibindings.IntoSet
+import kotlinx.collections.immutable.ImmutableList
+import ss.feed.FeedScreen
+import ss.feed.FeedType
+import ss.libraries.navigation3.EntryProviderBuilder
+import ss.libraries.navigation3.HomeNavKey
 
-@CircuitInject(HomeNavScreen::class, SingletonComponent::class)
-@Composable
-fun HomeNavigationUi(state: State, modifier: Modifier = Modifier) {
-    when (state) {
-        is State.Loading -> Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
+@Module
+@InstallIn(SingletonComponent::class)
+object HomeNavigationNavModule {
+
+    @Provides
+    @IntoSet
+    fun provideHomeNavigationEntry(): EntryProviderBuilder = {
+        entry<HomeNavKey> { _ ->
+            @Suppress("DEPRECATION")
+            val viewModel: HomeNavigationViewModel = hiltViewModel()
+            HomeNavigationScreen(viewModel = viewModel)
         }
-
-        is State.Fallback -> CircuitContent(
-            screen = state.selectedItem,
-            modifier = modifier.fillMaxSize(),
-            onNavEvent = { state.eventSink(State.Fallback.Event.OnNavEvent(it)) },
-        )
-
-        is State.NavbarNavigation -> NavigationSuite(
-            state = state,
-            modifier = modifier,
-        )
     }
 }
 
 @Composable
-private fun NavigationSuite(
-    state: State.NavbarNavigation,
+internal fun HomeNavigationScreen(
+    viewModel: HomeNavigationViewModel,
+    modifier: Modifier = Modifier,
+) {
+    val navigationItems by viewModel.navigationItems.collectAsState()
+    val selectedItem by viewModel.selectedItem.collectAsState()
+
+    HomeNavigationScreenContent(
+        navigationItems = navigationItems,
+        selectedItem = selectedItem,
+        onItemSelected = viewModel::selectItem,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun HomeNavigationScreenContent(
+    navigationItems: ImmutableList<NavbarItemNav3>?,
+    selectedItem: NavbarItemNav3?,
+    onItemSelected: (NavbarItemNav3) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    // Set default selected item when items load
+    LaunchedEffect(navigationItems) {
+        if (navigationItems != null && selectedItem == null && navigationItems.isNotEmpty()) {
+            onItemSelected(navigationItems.first())
+        }
+    }
+
+    when {
+        navigationItems == null -> {
+            Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+        navigationItems.isEmpty() -> {
+            // Fallback: show default feed
+            FeedScreen(
+                feedType = FeedType.SABBATH_SCHOOL,
+                modifier = modifier.fillMaxSize(),
+            )
+        }
+        selectedItem != null -> {
+            NavigationSuiteContent(
+                items = navigationItems,
+                selectedItem = selectedItem,
+                onItemSelected = onItemSelected,
+                modifier = modifier,
+            )
+        }
+    }
+}
+
+@Composable
+private fun NavigationSuiteContent(
+    items: ImmutableList<NavbarItemNav3>,
+    selectedItem: NavbarItemNav3,
+    onItemSelected: (NavbarItemNav3) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val layoutType = NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(currentWindowAdaptiveInfo())
@@ -83,23 +142,21 @@ private fun NavigationSuite(
 
     val content: @Composable (PaddingValues) -> Unit = {
         AnimatedContent(
-            targetState = state.selectedItem,
+            targetState = selectedItem,
             transitionSpec = {
                 fadeIn(animationSpec = tween(300)).togetherWith(fadeOut(animationSpec = tween(300)))
             },
             label = "content",
-        ) { screen ->
-            CircuitContent(
-                screen = screen,
+        ) { item ->
+            FeedScreen(
+                feedType = item.toFeedType(),
                 modifier = Modifier.fillMaxSize(),
-                onNavEvent = { state.eventSink(State.NavbarNavigation.Event.OnNavEvent(it)) },
             )
         }
     }
 
     when (layoutType) {
         NavigationSuiteType.NavigationBar -> {
-            // Only apply HazeScaffold if the layout is NavigationBar
             HazeScaffold(
                 modifier = modifier,
                 bottomBar = {
@@ -107,7 +164,7 @@ private fun NavigationSuite(
                         modifier = Modifier,
                         containerColor = Color.Transparent,
                     ) {
-                        state.items.forEach { model ->
+                        items.forEach { model ->
                             NavigationBarItem(
                                 icon = {
                                     Icon(
@@ -115,9 +172,9 @@ private fun NavigationSuite(
                                         contentDescription = stringResource(model.title),
                                     )
                                 },
-                                selected = model.screen() == state.selectedItem,
+                                selected = model == selectedItem,
                                 onClick = {
-                                    state.eventSink(State.NavbarNavigation.Event.OnItemSelected(model))
+                                    onItemSelected(model)
                                     hapticFeedback.performSegmentSwitch()
                                 },
                             )
@@ -131,7 +188,7 @@ private fun NavigationSuite(
         else -> {
             NavigationSuiteScaffold(
                 navigationSuiteItems = {
-                    state.items.forEach { model ->
+                    items.forEach { model ->
                         item(
                             icon = {
                                 Icon(
@@ -139,9 +196,9 @@ private fun NavigationSuite(
                                     contentDescription = stringResource(model.title),
                                 )
                             },
-                            selected = state.selectedItem == model.screen(),
+                            selected = selectedItem == model,
                             onClick = {
-                                state.eventSink(State.NavbarNavigation.Event.OnItemSelected(model))
+                                onItemSelected(model)
                                 hapticFeedback.performSegmentSwitch()
                             },
                         )
