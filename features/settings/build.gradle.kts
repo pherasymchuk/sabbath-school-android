@@ -37,27 +37,24 @@ foundry {
     features { compose() }
 }
 
-ksp {
-    arg("circuit.codegen.mode", "hilt")
-}
-
 dependencies {
     implementation(libs.google.hilt.android)
     implementation(libs.kotlinx.collectionsImmutable)
     implementation(libs.timber)
+    implementation(libs.androidx.hilt.navigation.compose)
     implementation(projects.common.auth)
     implementation(projects.common.core)
     implementation(projects.common.designCompose)
     implementation(projects.common.translations)
-    implementation(projects.libraries.circuit.api)
     implementation(projects.libraries.foundation.coroutines)
     implementation(projects.libraries.lessons.api)
+    implementation(projects.libraries.navigation3.api)
+    implementation(projects.libraries.navigation3.impl)
     implementation(projects.libraries.prefs.api)
 
     testImplementation(libs.bundles.testing.common)
     testImplementation(projects.libraries.foundation.coroutines.test)
     testImplementation(projects.libraries.lessons.test)
 
-    ksp(libs.circuit.codegen)
     ksp(libs.google.hilt.compiler)
 }

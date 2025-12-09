@@ -27,44 +27,83 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import app.ss.design.compose.extensions.content.ContentSpec
+import androidx.hilt.navigation.compose.hiltViewModel
 import app.ss.design.compose.extensions.haptics.LocalSsHapticFeedback
 import app.ss.design.compose.theme.SsTheme
 import app.ss.design.compose.widget.icon.IconBox
 import app.ss.design.compose.widget.icon.Icons
 import app.ss.design.compose.widget.scaffold.HazeScaffold
-import com.slack.circuit.codegen.annotations.CircuitInject
-import com.slack.circuit.overlay.LocalOverlayHost
-import com.slack.circuit.overlay.OverlayHost
-import com.slack.circuitx.overlays.DialogResult
-import dagger.hilt.components.SingletonComponent
-import ss.libraries.circuit.navigation.SettingsScreen
-import ss.libraries.circuit.overlay.ssAlertDialogOverlay
-import ss.settings.Event
+import kotlinx.collections.immutable.toImmutableList
+import ss.libraries.navigation3.CustomTabsKey
+import ss.libraries.navigation3.LocalSsNavigator
+import ss.libraries.navigation3.LoginKey
 import ss.settings.Overlay
-import ss.settings.State
+import ss.settings.SettingsNavEvent
+import ss.settings.SettingsViewModel
 import app.ss.translations.R as L10nR
 
+@Suppress("DEPRECATION")
 @OptIn(ExperimentalMaterial3Api::class)
-@CircuitInject(SettingsScreen::class, SingletonComponent::class)
 @Composable
-fun SettingsScreenUi(
-    state: State,
-    modifier: Modifier = Modifier
+fun SettingsScreen(
+    modifier: Modifier = Modifier,
+    viewModel: SettingsViewModel = hiltViewModel(),
+) {
+    val navigator = LocalSsNavigator.current
+    val entities by viewModel.entities.collectAsState()
+    val overlay by viewModel.overlay.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.navEvents.collect { event ->
+            when (event) {
+                is SettingsNavEvent.OpenUrl -> navigator.goTo(CustomTabsKey(event.url))
+                SettingsNavEvent.NavigateToLogin -> navigator.resetRoot(LoginKey)
+                SettingsNavEvent.NavigateBack -> navigator.pop()
+            }
+        }
+    }
+
+    SettingsContent(
+        entities = entities.toImmutableList(),
+        overlay = overlay,
+        modifier = modifier,
+        onBackClick = viewModel::navigateBack,
+        onDismissOverlay = viewModel::dismissOverlay,
+        onConfirmDeleteAccount = viewModel::confirmDeleteAccount,
+        onSetReminderTime = viewModel::setReminderTime,
+        onConfirmRemoveDownloads = viewModel::confirmRemoveDownloads,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SettingsContent(
+    entities: kotlinx.collections.immutable.ImmutableList<app.ss.design.compose.extensions.list.ListEntity>,
+    overlay: Overlay?,
+    modifier: Modifier = Modifier,
+    onBackClick: () -> Unit = {},
+    onDismissOverlay: () -> Unit = {},
+    onConfirmDeleteAccount: () -> Unit = {},
+    onSetReminderTime: (Int, Int) -> Unit = { _, _ -> },
+    onConfirmRemoveDownloads: () -> Unit = {},
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val hapticFeedback = LocalSsHapticFeedback.current
@@ -77,7 +116,7 @@ fun SettingsScreenUi(
                 navigationIcon = {
                     IconButton(onClick = {
                         hapticFeedback.performClick()
-                        state.eventSick(Event.NavBack)
+                        onBackClick()
                     }) {
                         IconBox(icon = Icons.ArrowBack)
                     }
@@ -98,7 +137,7 @@ fun SettingsScreenUi(
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             items(
-                items = state.entities,
+                items = entities,
                 key = { it.id }
             ) { item -> item.Content() }
 
@@ -106,144 +145,152 @@ fun SettingsScreenUi(
         }
     }
 
-    OverlayContent(state = state)
+    // Show dialogs based on overlay state
+    when (val currentOverlay = overlay) {
+        is Overlay.SelectReminderTime -> {
+            ReminderTimePickerDialog(
+                hour = currentOverlay.hour,
+                minute = currentOverlay.minute,
+                onDismiss = onDismissOverlay,
+                onConfirm = onSetReminderTime,
+            )
+        }
+        Overlay.ConfirmDeleteAccount -> {
+            ConfirmDeleteAccountDialog(
+                onDismiss = onDismissOverlay,
+                onConfirm = onConfirmDeleteAccount,
+            )
+        }
+        Overlay.ConfirmRemoveDownloads -> {
+            ConfirmRemoveDownloadsDialog(
+                onDismiss = onDismissOverlay,
+                onConfirm = onConfirmRemoveDownloads,
+            )
+        }
+        null -> {}
+    }
 
-    LaunchedEffect(state.overlay) {
-        if (state.overlay != null) {
+    LaunchedEffect(overlay) {
+        if (overlay != null) {
             hapticFeedback.performScreenView()
         }
     }
 }
 
-
-@Composable
-private fun OverlayContent(state: State) {
-    val overlay = state.overlay ?: return
-    val overlayHost = LocalOverlayHost.current
-
-    when (overlay) {
-        Overlay.ConfirmDeleteAccount -> overlayHost.ConfirmAccountDelete(
-            overlay = overlay,
-            eventSick = state.eventSick
-        )
-
-        is Overlay.SelectReminderTime -> overlayHost.ShowTimePicker(
-            overlay = overlay,
-            eventSick = state.eventSick
-        )
-
-        Overlay.ConfirmRemoveDownloads -> overlayHost.ShowConfirmRemoveDownloads(
-            overlay = overlay,
-            eventSick = state.eventSick
-        )
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun OverlayHost.ShowTimePicker(
-    overlay: Overlay.SelectReminderTime,
-    eventSick: (Event) -> Unit,
+private fun ReminderTimePickerDialog(
+    hour: Int,
+    minute: Int,
+    onDismiss: () -> Unit,
+    onConfirm: (Int, Int) -> Unit,
 ) {
     val hapticFeedback = LocalSsHapticFeedback.current
     val timePickerState = rememberTimePickerState(
-        initialHour = overlay.hour,
-        initialMinute = overlay.minute,
+        initialHour = hour,
+        initialMinute = minute,
     )
 
-    LaunchedEffect(overlay) {
-        val result = show(
-            ssAlertDialogOverlay(
-                title = ContentSpec.Res(L10nR.string.ss_settings_reminder_time),
-                cancelText = ContentSpec.Res(android.R.string.cancel),
-                confirmText = ContentSpec.Res(android.R.string.ok),
-                content = {
-                    TimePicker(
-                        state = timePickerState,
-                        modifier = Modifier
-                    )
-                }
-            )
-        )
-        when (result) {
-            DialogResult.Confirm -> {
-                eventSick(Event.SetReminderTime(timePickerState.hour, timePickerState.minute))
+    AlertDialog(
+        onDismissRequest = {
+            hapticFeedback.performClick()
+            onDismiss()
+        },
+        title = { Text(stringResource(L10nR.string.ss_settings_reminder_time)) },
+        text = {
+            TimePicker(state = timePickerState)
+        },
+        confirmButton = {
+            TextButton(onClick = {
                 hapticFeedback.performSuccess()
+                onConfirm(timePickerState.hour, timePickerState.minute)
+            }) {
+                Text(stringResource(android.R.string.ok))
             }
-            DialogResult.Cancel,
-            DialogResult.Dismiss -> {
-                eventSick(Event.OverlayDismiss)
+        },
+        dismissButton = {
+            TextButton(onClick = {
                 hapticFeedback.performClick()
+                onDismiss()
+            }) {
+                Text(stringResource(android.R.string.cancel))
             }
         }
-    }
+    )
 }
 
 @Composable
-private fun OverlayHost.ConfirmAccountDelete(
-    overlay: Overlay?,
-    eventSick: (Event) -> Unit,
+private fun ConfirmDeleteAccountDialog(
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
 ) {
     val hapticFeedback = LocalSsHapticFeedback.current
-    LaunchedEffect(overlay) {
-        val result = show(
-            ssAlertDialogOverlay(
-                title = ContentSpec.Res(L10nR.string.ss_delete_account_question),
-                cancelText = ContentSpec.Res(L10nR.string.ss_login_anonymously_dialog_negative),
-                confirmText = ContentSpec.Res(L10nR.string.ss_login_anonymously_dialog_positive),
-                content = {
-                    Text(
-                        text = stringResource(id = L10nR.string.ss_delete_account_warning),
-                        style = SsTheme.typography.bodyMedium
-                    )
-                }
-            )
-        )
 
-        when (result) {
-            DialogResult.Confirm -> {
+    AlertDialog(
+        onDismissRequest = {
+            hapticFeedback.performSuccess()
+            onDismiss()
+        },
+        title = { Text(stringResource(L10nR.string.ss_delete_account_question)) },
+        text = {
+            Text(
+                text = stringResource(id = L10nR.string.ss_delete_account_warning),
+                style = SsTheme.typography.bodyMedium
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = {
                 hapticFeedback.performError()
-                eventSick(Event.AccountDeleteConfirmed)
+                onConfirm()
+            }) {
+                Text(stringResource(L10nR.string.ss_login_anonymously_dialog_positive))
             }
-            DialogResult.Cancel,
-            DialogResult.Dismiss -> {
+        },
+        dismissButton = {
+            TextButton(onClick = {
                 hapticFeedback.performSuccess()
-                eventSick(Event.OverlayDismiss)
+                onDismiss()
+            }) {
+                Text(stringResource(L10nR.string.ss_login_anonymously_dialog_negative))
             }
         }
-    }
+    )
 }
 
 @Composable
-private fun OverlayHost.ShowConfirmRemoveDownloads(
-    overlay: Overlay?,
-    eventSick: (Event) -> Unit,
+private fun ConfirmRemoveDownloadsDialog(
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
 ) {
     val hapticFeedback = LocalSsHapticFeedback.current
-    LaunchedEffect(overlay) {
-        val result = show(
-            ssAlertDialogOverlay(
-                title = ContentSpec.Res(L10nR.string.ss_delete_downloads),
-                cancelText = ContentSpec.Res(L10nR.string.ss_login_anonymously_dialog_negative),
-                confirmText = ContentSpec.Res(L10nR.string.ss_login_anonymously_dialog_positive),
-                content = {
-                    Text(
-                        text = stringResource(id = L10nR.string.ss_delete_downloads_confirm),
-                        style = SsTheme.typography.bodyMedium
-                    )
-                }
+
+    AlertDialog(
+        onDismissRequest = {
+            hapticFeedback.performSuccess()
+            onDismiss()
+        },
+        title = { Text(stringResource(L10nR.string.ss_delete_downloads)) },
+        text = {
+            Text(
+                text = stringResource(id = L10nR.string.ss_delete_downloads_confirm),
+                style = SsTheme.typography.bodyMedium
             )
-        )
-        when (result) {
-            DialogResult.Confirm -> {
+        },
+        confirmButton = {
+            TextButton(onClick = {
                 hapticFeedback.performError()
-                eventSick(Event.RemoveDownloads)
+                onConfirm()
+            }) {
+                Text(stringResource(L10nR.string.ss_login_anonymously_dialog_positive))
             }
-            DialogResult.Cancel,
-            DialogResult.Dismiss -> {
+        },
+        dismissButton = {
+            TextButton(onClick = {
                 hapticFeedback.performSuccess()
-                eventSick(Event.OverlayDismiss)
+                onDismiss()
+            }) {
+                Text(stringResource(L10nR.string.ss_login_anonymously_dialog_negative))
             }
         }
-    }
+    )
 }

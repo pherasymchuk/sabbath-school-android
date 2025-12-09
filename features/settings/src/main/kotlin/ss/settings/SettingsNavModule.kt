@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024. Adventech <info@adventech.io>
+ * Copyright (c) 2025. Adventech <info@adventech.io>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,13 +22,24 @@
 
 package ss.settings
 
-import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.Stable
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+import dagger.multibindings.IntoSet
+import ss.libraries.navigation3.EntryProviderBuilder
+import ss.libraries.navigation3.SettingsKey
+import ss.settings.ui.SettingsScreen
 
-@Stable
-sealed interface Overlay {
-    @Immutable
-    data class SelectReminderTime(val hour: Int, val minute: Int) : Overlay
-    data object ConfirmDeleteAccount : Overlay
-    data object ConfirmRemoveDownloads : Overlay
+@Module
+@InstallIn(SingletonComponent::class)
+object SettingsNavModule {
+
+    @Provides
+    @IntoSet
+    fun provideSettingsEntry(): EntryProviderBuilder = {
+        entry<SettingsKey> {
+            SettingsScreen()
+        }
+    }
 }
