@@ -20,32 +20,30 @@
  * THE SOFTWARE.
  */
 
-package app.ss.media.playback.ui.nowPlaying
+package io.adventech.blockkit.ui.di
 
-import androidx.compose.runtime.Immutable
-import app.ss.models.media.AudioFile
-import ss.libraries.media.model.PlaybackProgressState
-import ss.libraries.media.model.PlaybackQueue
-import ss.libraries.media.model.PlaybackSpeed
-import ss.services.media.ui.PlaybackConnection
-import ss.services.media.ui.spec.PlaybackStateSpec
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+import dagger.multibindings.IntoSet
+import io.adventech.blockkit.ui.image.ImagePreviewScreen
+import ss.libraries.navigation3.EntryProviderBuilder
+import ss.libraries.navigation3.ImagePreviewKey
 
-sealed interface AudioPlayerState {
-    data object Loading : AudioPlayerState
+@Module
+@InstallIn(SingletonComponent::class)
+object BlockKitNavModule {
 
-    data class NowPlaying(
-        val spec: NowPlayingScreenSpec
-    ) : AudioPlayerState
+    @Provides
+    @IntoSet
+    fun provideImagePreviewEntry(): EntryProviderBuilder = {
+        entry<ImagePreviewKey> { key ->
+            ImagePreviewScreen(
+                id = key.id,
+                src = key.src,
+                caption = key.caption,
+            )
+        }
+    }
 }
-
-@Immutable
-data class NowPlayingScreenSpec(
-    val nowPlayingAudio: AudioFile,
-    val playbackQueue: PlaybackQueue,
-    val playbackState: PlaybackStateSpec,
-    val playbackProgressState: PlaybackProgressState,
-    val playbackConnection: PlaybackConnection,
-    val playbackSpeed: PlaybackSpeed,
-    val isDraggable: (Boolean) -> Unit
-)
-

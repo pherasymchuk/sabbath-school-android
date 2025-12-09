@@ -36,10 +36,6 @@ foundry {
     android { features { snapshotTests() } }
 }
 
-ksp {
-    arg("circuit.codegen.mode", "hilt")
-}
-
 dependencies {
     api(projects.libraries.blockKit.model)
     api(projects.libraries.blockKit.parser)
@@ -52,6 +48,7 @@ dependencies {
     implementation(libs.bundles.compose.tooling)
     implementation(libs.coil.compose)
     implementation(libs.google.hilt.android)
+    implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.haze)
     implementation(libs.haze.materials)
     implementation(libs.kotlinx.collectionsImmutable)
@@ -61,14 +58,14 @@ dependencies {
     implementation(libs.timber)
     implementation(projects.common.translations)
     implementation(projects.libraries.cascadeCompose)
-    implementation(projects.libraries.circuit.api)
     implementation(projects.libraries.media.api)
     implementation(projects.libraries.media.resources)
+    implementation(projects.libraries.navigation3.api)
+    implementation(projects.libraries.navigation3.impl)
     implementation(projects.libraries.ui.placeholder)
     implementation(projects.services.media.ui)
 
     testImplementation(libs.bundles.testing.common)
 
-    ksp(libs.circuit.codegen)
     ksp(libs.google.hilt.compiler)
 }

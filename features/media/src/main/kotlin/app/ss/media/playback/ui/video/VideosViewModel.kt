@@ -22,54 +22,57 @@
 
 package app.ss.media.playback.ui.video
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import android.content.Context
+import android.content.Intent
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import app.ss.media.playback.ui.video.player.VideoPlayerActivity
+import app.ss.models.media.SSVideo
 import app.ss.models.media.SSVideosInfo
-import com.slack.circuit.codegen.annotations.CircuitInject
-import com.slack.circuit.retained.produceRetainedState
-import com.slack.circuit.runtime.Navigator
-import com.slack.circuit.runtime.presenter.Presenter
-import com.slack.circuitx.android.IntentScreen
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
-import dagger.hilt.components.SingletonComponent
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
-import ss.libraries.circuit.navigation.VideosScreen
+import kotlinx.coroutines.launch
 import ss.libraries.media.api.MediaRepository
+import javax.inject.Inject
 
-class VideosScreenPresenter @AssistedInject constructor(
-    @Assisted private val navigator: Navigator,
-    @Assisted private val screen: VideosScreen,
+sealed interface VideosNavEvent {
+    data class LaunchIntent(val intent: Intent) : VideosNavEvent
+}
+
+@HiltViewModel
+class VideosViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
     private val repository: MediaRepository,
-) : Presenter<VideosScreenState> {
+) : ViewModel() {
 
-    @Composable
-    override fun present(): VideosScreenState {
-        val videos by rememberVideos()
+    private val documentIndex: String = savedStateHandle["documentIndex"] ?: ""
+    private val documentId: String? = savedStateHandle["documentId"]
 
-        return VideosScreenState(data = videos) { event ->
-            when (event) {
-                is VideosScreenEvent.OnVideoSelected -> {
-                    navigator.goTo(
-                        IntentScreen(
-                            VideoPlayerActivity.launchIntent(
-                                event.context,
-                                event.video,
-                            )
-                        )
-                    )
-                }
-            }
-        }
+    private val _uiState = MutableStateFlow(VideosScreenState())
+    val uiState: StateFlow<VideosScreenState> = _uiState.asStateFlow()
+
+    private val _navEvents = MutableSharedFlow<VideosNavEvent>()
+    val navEvents: SharedFlow<VideosNavEvent> = _navEvents.asSharedFlow()
+
+    init {
+        loadVideos()
     }
 
-    @Composable
-    private fun rememberVideos() = produceRetainedState<VideoListData>(VideoListData.Empty) {
-        repository.getVideo(screen.documentIndex)
-            .map { it.toData(screen.documentId) }
-            .collect { value = it }
+    private fun loadVideos() {
+        viewModelScope.launch {
+            repository.getVideo(documentIndex)
+                .map { it.toData(documentId) }
+                .collect { data ->
+                    _uiState.value = VideosScreenState(data = data)
+                }
+        }
     }
 
     private fun List<SSVideosInfo>.toData(documentId: String?): VideoListData =
@@ -87,9 +90,13 @@ class VideosScreenPresenter @AssistedInject constructor(
             )
         }
 
-    @CircuitInject(VideosScreen::class, SingletonComponent::class)
-    @AssistedFactory
-    interface Factory {
-        fun create(navigator: Navigator, screen: VideosScreen): VideosScreenPresenter
+    fun onVideoSelected(context: Context, video: SSVideo) {
+        viewModelScope.launch {
+            _navEvents.emit(
+                VideosNavEvent.LaunchIntent(
+                    VideoPlayerActivity.launchIntent(context, video)
+                )
+            )
+        }
     }
 }

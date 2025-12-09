@@ -22,22 +22,37 @@
 
 package ss.document.reader
 
-import com.slack.circuit.runtime.CircuitUiState
-import com.slack.circuit.runtime.screen.Screen
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.adventech.blockkit.ui.style.ReaderStyle
 import io.adventech.blockkit.ui.style.ReaderStyleConfig
-import kotlinx.parcelize.Parcelize
 
-@Parcelize
-data object ReaderOptionsScreen: Screen {
-    data class State(
-        val config: ReaderStyleConfig,
-        val eventSink: (Event) -> Unit
-    ): CircuitUiState
+/** UI State for reader options. */
+data class ReaderOptionsState(
+    val config: ReaderStyleConfig = ReaderStyleConfig(),
+)
 
-    sealed interface Event {
-        data class OnThemeChanged(val theme: ReaderStyle.Theme): Event
-        data class OnTypefaceChanged(val typeface: ReaderStyle.Typeface): Event
-        data class OnFontSizeChanged(val size: ReaderStyle.Size): Event
-    }
+/** Events for reader options. */
+sealed interface ReaderOptionsEvent {
+    data class OnThemeChanged(val theme: ReaderStyle.Theme) : ReaderOptionsEvent
+    data class OnTypefaceChanged(val typeface: ReaderStyle.Typeface) : ReaderOptionsEvent
+    data class OnFontSizeChanged(val size: ReaderStyle.Size) : ReaderOptionsEvent
+}
+
+/**
+ * Composable entry point for reader options screen.
+ */
+@Suppress("DEPRECATION")
+@Composable
+fun ReaderOptionsScreen(
+    viewModel: ReaderOptionsViewModel = hiltViewModel(),
+) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    ReaderOptionsContent(
+        state = state,
+        onEvent = viewModel::onEvent,
+    )
 }

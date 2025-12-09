@@ -22,36 +22,33 @@
 
 package app.ss.media.playback.ui.nowPlaying.mini
 
-import androidx.compose.runtime.Composable
-import com.slack.circuit.codegen.annotations.CircuitInject
-import com.slack.circuit.runtime.Navigator
-import com.slack.circuit.runtime.presenter.Presenter
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
-import dagger.hilt.components.SingletonComponent
-import ss.libraries.circuit.navigation.ExpandedAudioPlayerScreen
-import ss.libraries.circuit.navigation.MiniAudioPlayerScreen
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.launch
+import ss.libraries.navigation3.ExpandedAudioPlayerKey
+import ss.libraries.navigation3.NavKey
 import ss.services.media.ui.PlaybackConnection
+import javax.inject.Inject
 
-class MiniPlayerPresenter @AssistedInject constructor(
-    @Assisted private val navigator: Navigator,
-    private val playbackConnection: PlaybackConnection,
-) : Presenter<MiniPlayerState> {
-    @Composable
-    override fun present(): MiniPlayerState {
-        return MiniPlayerState(playbackConnection) { event ->
-            when (event) {
-                MiniPlayerEvent.Expand -> {
-                    navigator.goTo(ExpandedAudioPlayerScreen)
-                }
-            }
+sealed interface MiniPlayerNavEvent {
+    data class NavigateTo(val key: NavKey) : MiniPlayerNavEvent
+}
+
+@HiltViewModel
+class MiniPlayerViewModel @Inject constructor(
+    val playbackConnection: PlaybackConnection,
+) : ViewModel() {
+
+    private val _navEvents = MutableSharedFlow<MiniPlayerNavEvent>()
+    val navEvents: SharedFlow<MiniPlayerNavEvent> = _navEvents.asSharedFlow()
+
+    fun onExpand() {
+        viewModelScope.launch {
+            _navEvents.emit(MiniPlayerNavEvent.NavigateTo(ExpandedAudioPlayerKey))
         }
-    }
-
-    @CircuitInject(MiniAudioPlayerScreen::class, SingletonComponent::class)
-    @AssistedFactory
-    interface Factory {
-        fun create(navigator: Navigator): MiniPlayerPresenter
     }
 }

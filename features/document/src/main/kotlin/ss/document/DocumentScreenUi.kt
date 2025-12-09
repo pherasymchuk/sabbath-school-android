@@ -33,7 +33,9 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeContent
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -41,6 +43,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,12 +57,6 @@ import app.ss.design.compose.extensions.haptics.LocalSsHapticFeedback
 import app.ss.design.compose.theme.SsTheme
 import app.ss.design.compose.widget.scaffold.HazeScaffold
 import app.ss.design.compose.widget.scaffold.SystemUiEffect
-import com.slack.circuit.codegen.annotations.CircuitInject
-import com.slack.circuit.foundation.CircuitContent
-import com.slack.circuit.foundation.NavEvent
-import com.slack.circuit.overlay.ContentWithOverlays
-import com.slack.circuit.overlay.OverlayEffect
-import dagger.hilt.components.SingletonComponent
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.materials.HazeMaterials
 import io.adventech.blockkit.model.resource.SegmentType
@@ -71,20 +68,21 @@ import io.adventech.blockkit.ui.style.background
 import io.adventech.blockkit.ui.style.font.LocalFontFamilyProvider
 import io.adventech.blockkit.ui.style.primaryForeground
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.launch
 import ss.document.components.DocumentLoadingView
 import ss.document.components.DocumentPager
 import ss.document.components.DocumentTitleBar
 import ss.document.components.DocumentTopAppBar
-import ss.document.segment.components.overlay.BlocksOverlay
-import ss.document.segment.components.overlay.ExcerptOverlay
-import ss.libraries.circuit.navigation.DocumentScreen
-import ss.libraries.circuit.navigation.MiniAudioPlayerScreen
-import ss.libraries.circuit.overlay.BottomSheetOverlay
+import ss.document.segment.components.overlay.BlocksOverlayContent
+import ss.document.segment.components.overlay.ExcerptOverlayContent
+import app.ss.media.playback.ui.nowPlaying.mini.MiniPlayerScreen
+import ss.libraries.navigation3.HiddenSegmentKey
+import ss.libraries.navigation3.LocalSsNavigator
+import ss.libraries.navigation3.ReaderOptionsKey
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalHazeMaterialsApi::class)
-@CircuitInject(DocumentScreen::class, SingletonComponent::class)
 @Composable
-fun DocumentScreenUi(state: State, modifier: Modifier = Modifier) {
+internal fun DocumentScreenUi(state: State, modifier: Modifier = Modifier) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val hapticFeedback = LocalSsHapticFeedback.current
     val context = LocalContext.current
@@ -154,12 +152,7 @@ fun DocumentScreenUi(state: State, modifier: Modifier = Modifier) {
         bottomBar = {
             val hidePlayer = (state as? State.Success)?.selectedSegment?.type == SegmentType.STORY && !collapsed
             if (!hidePlayer) {
-                CircuitContent(
-                    screen = MiniAudioPlayerScreen,
-                    onNavEvent = {
-                        state.eventSink(SuccessEvent.OnNavEvent(it, context))
-                    }
-                )
+                MiniPlayerScreen()
             }
         },
         hazeStyle = HazeMaterials.regular(containerColor),
@@ -191,13 +184,13 @@ fun DocumentScreenUi(state: State, modifier: Modifier = Modifier) {
                         onCollapseChange = { collapsed = it },
                         onHandleUri = { uri, blocks -> state.eventSink(SuccessEvent.OnHandleUri(uri, blocks)) },
                         onHandleReference = { state.eventSink(SuccessEvent.OnHandleReference(it)) },
-                        onNavEvent = { state.eventSink(SuccessEvent.OnNavEvent(it, context)) },
+                        onNavEvent = { navEvent ->
+                            state.eventSink(SuccessEvent.OnNavEvent(navEvent, context))
+                        },
                     )
                 }
 
-                DocumentOverlay(state.overlayState, state.readerStyle) {
-                    state.eventSink(SuccessEvent.OnNavEvent(it, context))
-                }
+                DocumentOverlay(state.overlayState, state.readerStyle)
             }
         }
     }
@@ -206,54 +199,69 @@ fun DocumentScreenUi(state: State, modifier: Modifier = Modifier) {
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun DocumentOverlay(
     documentOverlayState: DocumentOverlayState?,
     readerStyle: ReaderStyleConfig,
-    onNavEvent: (event: NavEvent) -> Unit,
 ) {
     val hapticFeedback = LocalSsHapticFeedback.current
     val containerColor = readerStyle.theme.background()
     val contentColor = readerStyle.theme.primaryForeground()
+    val navigator = LocalSsNavigator.current
+    val scope = rememberCoroutineScope()
 
-    OverlayEffect(documentOverlayState?.let { it::class.simpleName } ?: Unit) {
-        when (val overlayState = documentOverlayState) {
-            is DocumentOverlayState.BottomSheet -> {
+    when (val overlayState = documentOverlayState) {
+        is DocumentOverlayState.BottomSheet -> {
+            val sheetState = rememberModalBottomSheetState(
+                skipPartiallyExpanded = overlayState.skipPartiallyExpanded
+            )
 
-                overlayState.onResult(
-                    show(BottomSheetOverlay(
-                        skipPartiallyExpanded = overlayState.skipPartiallyExpanded,
-                        containerColor = containerColor.takeIf { overlayState.themed },
-                        contentColor = contentColor.takeIf { overlayState.themed },
-                    ) {
-                        ContentWithOverlays {
-                            CircuitContent(
-                                screen = overlayState.screen,
-                                onNavEvent = onNavEvent,
-                            )
+            ModalBottomSheet(
+                onDismissRequest = overlayState.onDismiss,
+                sheetState = sheetState,
+                containerColor = if (overlayState.themed) containerColor else Color.Unspecified,
+                contentColor = if (overlayState.themed) contentColor else Color.Unspecified,
+            ) {
+                // Navigate to the key content using the navigator
+                LaunchedEffect(overlayState.key) {
+                    if (overlayState.feedback) {
+                        hapticFeedback.performScreenView()
+                    }
+                }
+                // For bottom sheet content, we need to render based on the key type
+                when (overlayState.key) {
+                    is ReaderOptionsKey -> {
+                        ss.document.reader.ReaderOptionsScreen()
+                    }
+                    else -> {
+                        // Handle other key types or navigate
+                        navigator.goTo(overlayState.key)
+                        scope.launch {
+                            sheetState.hide()
+                            overlayState.onDismiss()
                         }
-
-                        LaunchedEffect(Unit) {
-                            // Feedback already provided on the top bar
-                            if (overlayState.feedback) {
-                                hapticFeedback.performScreenView()
-                            }
-                        }
-                    })
-                )
+                    }
+                }
             }
-
-            is DocumentOverlayState.Segment.Blocks -> overlayState.onResult(
-                show(BlocksOverlay(overlayState.state))
-            )
-
-            is DocumentOverlayState.Segment.Excerpt -> overlayState.onResult(
-                show(ExcerptOverlay(overlayState.state))
-            )
-
-            is DocumentOverlayState.Segment.None -> Unit
-            null -> Unit
         }
+
+        is DocumentOverlayState.Segment.Blocks -> {
+            BlocksOverlayContent(
+                state = overlayState.state,
+                onDismiss = overlayState.onDismiss,
+            )
+        }
+
+        is DocumentOverlayState.Segment.Excerpt -> {
+            ExcerptOverlayContent(
+                state = overlayState.state,
+                onDismiss = overlayState.onDismiss,
+            )
+        }
+
+        is DocumentOverlayState.Segment.None -> Unit
+        null -> Unit
     }
 }
 

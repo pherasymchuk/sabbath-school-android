@@ -28,18 +28,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import app.ss.models.PDFAux
-import com.slack.circuit.foundation.CircuitContent
-import com.slack.circuit.foundation.NavEvent
 import io.adventech.blockkit.model.BlockData
 import io.adventech.blockkit.model.BlockItem
 import io.adventech.blockkit.model.resource.ReferenceModel
 import io.adventech.blockkit.model.resource.Segment
 import io.adventech.blockkit.model.resource.SegmentType
 import io.adventech.blockkit.ui.input.UserInputState
+import ss.document.NavEvent
 import ss.document.segment.components.blocks.SegmentBlocksContent
 import ss.document.segment.components.story.StorySegmentUi
-import ss.document.segment.components.video.VideoSegmentScreen
-import ss.libraries.circuit.navigation.PdfScreen
+import ss.document.segment.components.video.VideoSegmentContent
+import ss.libraries.navigation3.PdfKey
 
 @Composable
 fun SegmentUi(
@@ -96,17 +95,16 @@ fun SegmentUi(
                 }
             }
 
-            CircuitContent(
-                screen = PdfScreen(documentId, segment.resourceId, documentIndex, resourceIndex, segment.id, pdfs),
-                modifier = modifier,
-                onNavEvent = onNavEvent,
-            )
+            val pdfKey = PdfKey(documentId, segment.resourceId, documentIndex, resourceIndex, segment.id, pdfs)
+            onNavEvent(NavEvent.GoTo(pdfKey))
         }
 
         SegmentType.VIDEO -> {
             segment.video?.let {
-                CircuitContent(
-                    screen = VideoSegmentScreen(segment.id, segment.index, documentId),
+                VideoSegmentContent(
+                    id = segment.id,
+                    index = segment.index,
+                    documentId = documentId,
                     modifier = modifier,
                     onNavEvent = onNavEvent,
                 )

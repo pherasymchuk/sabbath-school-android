@@ -49,19 +49,18 @@ import app.ss.design.compose.theme.SsTheme
 import app.ss.design.compose.widget.icon.IconBox
 import app.ss.design.compose.widget.icon.ResIcon
 import app.ss.design.compose.widget.material.LegacySlider
-import com.slack.circuit.codegen.annotations.CircuitInject
-import dagger.hilt.components.SingletonComponent
 import io.adventech.blockkit.ui.style.ReaderStyle
 import io.adventech.blockkit.ui.style.ReaderStyleConfig
 import io.adventech.blockkit.ui.style.Styler
-import ss.document.reader.ReaderOptionsScreen.Event
-import ss.document.reader.ReaderOptionsScreen.State
 import app.ss.translations.R as L10nR
 import ss.document.R as DocumentR
 
-@CircuitInject(ReaderOptionsScreen::class, SingletonComponent::class)
 @Composable
-fun ReaderOptionsUi(state: State, modifier: Modifier = Modifier) {
+internal fun ReaderOptionsContent(
+    state: ReaderOptionsState,
+    onEvent: (ReaderOptionsEvent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val hapticFeedback = LocalSsHapticFeedback.current
     Column(
         modifier = modifier
@@ -71,17 +70,17 @@ fun ReaderOptionsUi(state: State, modifier: Modifier = Modifier) {
     ) {
         ReaderOptionsTheme(state.config.theme) {
             hapticFeedback.performSegmentSwitch()
-            state.eventSink(Event.OnThemeChanged(it))
+            onEvent(ReaderOptionsEvent.OnThemeChanged(it))
         }
 
         ReaderOptionsTypeface(state.config.typeface) {
             hapticFeedback.performSegmentSwitch()
-            state.eventSink(Event.OnTypefaceChanged(it))
+            onEvent(ReaderOptionsEvent.OnTypefaceChanged(it))
         }
 
         ReaderOptionsFontSize(state.config.size) {
             hapticFeedback.performGestureEnd()
-            state.eventSink(Event.OnFontSizeChanged(it))
+            onEvent(ReaderOptionsEvent.OnFontSizeChanged(it))
         }
     }
 }
@@ -247,8 +246,9 @@ private fun Float.toSize() = when (this) {
 private fun Preview() {
     SsTheme {
         Surface {
-            ReaderOptionsUi(
-                state = State(config = ReaderStyleConfig()) {}
+            ReaderOptionsContent(
+                state = ReaderOptionsState(config = ReaderStyleConfig()),
+                onEvent = {}
             )
         }
     }

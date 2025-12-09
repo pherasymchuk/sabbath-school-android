@@ -51,8 +51,6 @@ import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import coil.size.Scale
 import coil.size.Size
-import com.slack.circuit.foundation.CircuitContent
-import com.slack.circuit.foundation.NavEvent
 import io.adventech.blockkit.model.BlockItem
 import io.adventech.blockkit.ui.dialog.FullScreenDialog
 import io.adventech.blockkit.ui.image.ImagePreviewScreen
@@ -175,14 +173,10 @@ private fun ImageContentPreview(
         modifier = modifier,
         windowLightStatusBar = false,
     ) {
-        CircuitContent(
-            screen = ImagePreviewScreen(id, data, contentDescription),
-            onNavEvent = { navEvent ->
-                when (navEvent) {
-                    is NavEvent.Pop -> onDismiss()
-                    else -> Unit
-                }
-            },
+        ImagePreviewScreen(
+            id = id,
+            src = data,
+            caption = contentDescription,
         )
     }
 }

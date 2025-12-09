@@ -20,32 +20,15 @@
  * THE SOFTWARE.
  */
 
-package app.ss.media.playback.ui.nowPlaying
+package ss.libraries.navigation3
 
-import androidx.compose.runtime.Immutable
-import app.ss.models.media.AudioFile
-import ss.libraries.media.model.PlaybackProgressState
-import ss.libraries.media.model.PlaybackQueue
-import ss.libraries.media.model.PlaybackSpeed
-import ss.services.media.ui.PlaybackConnection
-import ss.services.media.ui.spec.PlaybackStateSpec
+import androidx.navigation3.runtime.NavKey
+import kotlinx.serialization.Serializable
 
-sealed interface AudioPlayerState {
-    data object Loading : AudioPlayerState
-
-    data class NowPlaying(
-        val spec: NowPlayingScreenSpec
-    ) : AudioPlayerState
-}
-
-@Immutable
-data class NowPlayingScreenSpec(
-    val nowPlayingAudio: AudioFile,
-    val playbackQueue: PlaybackQueue,
-    val playbackState: PlaybackStateSpec,
-    val playbackProgressState: PlaybackProgressState,
-    val playbackConnection: PlaybackConnection,
-    val playbackSpeed: PlaybackSpeed,
-    val isDraggable: (Boolean) -> Unit
-)
-
+/** Navigation key for video segment content screen. */
+@Serializable
+data class VideoSegmentKey(
+    val id: String,
+    val index: String,
+    val documentId: String,
+) : NavKey

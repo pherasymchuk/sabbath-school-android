@@ -29,19 +29,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.core.net.toUri
-import com.slack.circuit.retained.rememberRetained
-import com.slack.circuit.runtime.CircuitUiEvent
-import com.slack.circuit.runtime.Navigator
 import io.adventech.blockkit.model.BlockData
 import io.adventech.blockkit.model.resource.Segment
 import io.adventech.blockkit.ui.input.UserInputState
 import kotlinx.collections.immutable.toImmutableList
 import ss.document.DocumentOverlayState
 import ss.document.producer.ReaderStyleStateProducer
-import ss.document.segment.components.overlay.BlocksOverlay
-import ss.document.segment.components.overlay.ExcerptOverlay
-import ss.document.segment.hidden.HiddenSegmentScreen
-import ss.libraries.circuit.navigation.CustomTabsIntentScreen
+import ss.document.segment.components.overlay.BlocksOverlayState
+import ss.document.segment.components.overlay.ExcerptOverlayState
+import ss.libraries.navigation3.CustomTabsKey
+import ss.libraries.navigation3.HiddenSegmentKey
+import ss.libraries.navigation3.SsNavigator
 import timber.log.Timber
 import javax.inject.Inject
 import ss.document.DocumentOverlayState.Segment as SegmentOverlayState
@@ -50,9 +48,9 @@ import ss.document.DocumentOverlayState.Segment as SegmentOverlayState
 interface SegmentOverlayStateProducer {
 
     @Composable
-    operator fun invoke(navigator: Navigator, userInputState: UserInputState): DocumentOverlayState
+    operator fun invoke(navigator: SsNavigator, userInputState: UserInputState): DocumentOverlayState
 
-    sealed interface Event : CircuitUiEvent {
+    sealed interface Event {
         data class OnHandleUri(val uri: String, val data: BlockData?) : Event
 
         data class OnHiddenSegment(
@@ -73,8 +71,8 @@ internal class OverlayStateProducerImpl @Inject constructor(
 ) : SegmentOverlayStateProducer {
 
     @Composable
-    override fun invoke(navigator: Navigator, userInputState: UserInputState): DocumentOverlayState {
-        var overlayState by rememberRetained { mutableStateOf<DocumentOverlayState?>(null) }
+    override fun invoke(navigator: SsNavigator, userInputState: UserInputState): DocumentOverlayState {
+        var overlayState by remember { mutableStateOf<DocumentOverlayState?>(null) }
         val readerStyle = readerStyleStateProducer()
 
         val defaultState = remember(readerStyle, userInputState) {
@@ -89,34 +87,29 @@ internal class OverlayStateProducerImpl @Inject constructor(
                                 val excerpt = data?.bible?.get(uri.host) ?: return@None
 
                                 overlayState = SegmentOverlayState.Excerpt(
-                                    ExcerptOverlay.State(
+                                    state = ExcerptOverlayState(
                                         excerpt = excerpt,
                                         style = readerStyle,
                                         userInputState = userInputState,
-                                    )
-                                ) { result ->
-                                    when (result) {
-                                        is ExcerptOverlay.Result.Dismissed -> {
-                                            result.bibleVersion?.let {
-                                                userInputState.eventSink(UserInputState.Event.BibleVersionChanged(it))
-                                            }
-                                        }
+                                    ),
+                                    onDismiss = {
+                                        overlayState = null
                                     }
-                                    overlayState = null
-                                }
+                                )
                             }
 
                             SCHEME_EGW -> {
                                 val blocks = data?.egw?.get(uri.host) ?: return@None
                                 overlayState = SegmentOverlayState.Blocks(
-                                    state = BlocksOverlay.State(
+                                    state = BlocksOverlayState(
                                         blocks = blocks.toImmutableList(),
                                         style = readerStyle,
                                         userInputState = userInputState,
-                                    )
-                                ) {
-                                    overlayState = null
-                                }
+                                    ),
+                                    onDismiss = {
+                                        overlayState = null
+                                    }
+                                )
                             }
 
                             SCHEME_COMPLETION -> {
@@ -124,14 +117,14 @@ internal class OverlayStateProducerImpl @Inject constructor(
                             }
 
                             in WEB_SCHEMES -> {
-                                navigator.goTo(CustomTabsIntentScreen(event.uri))
+                                navigator.goTo(CustomTabsKey(event.uri))
                             }
                         }
                     }
 
                     is SegmentOverlayStateProducer.Event.OnHiddenSegment -> {
                         overlayState = DocumentOverlayState.BottomSheet(
-                            screen = HiddenSegmentScreen(
+                            key = HiddenSegmentKey(
                                 id = event.segment.id,
                                 index = event.segment.index,
                                 documentIndex = event.documentIndex,
@@ -139,7 +132,7 @@ internal class OverlayStateProducerImpl @Inject constructor(
                             skipPartiallyExpanded = true,
                             themed = true,
                             feedback = true,
-                            onResult = { result ->
+                            onDismiss = {
                                 overlayState = null
                             }
                         )

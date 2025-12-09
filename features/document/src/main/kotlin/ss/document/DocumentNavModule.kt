@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023. Adventech <info@adventech.io>
+ * Copyright (c) 2025. Adventech <info@adventech.io>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,49 +20,41 @@
  * THE SOFTWARE.
  */
 
-package ss.services.circuit.impl
+package ss.document
 
-import com.slack.circuit.foundation.Circuit
-import com.slack.circuit.runtime.presenter.Presenter
-import com.slack.circuit.runtime.ui.Ui
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import dagger.multibindings.ElementsIntoSet
-import javax.inject.Singleton
+import dagger.multibindings.IntoSet
+import ss.document.producer.ReaderStyleStateProducer
+import ss.document.producer.TopAppbarActionsProducer
+import ss.document.producer.UserInputStateProducer
+import ss.document.segment.producer.SegmentOverlayStateProducer
+import ss.libraries.navigation3.DocumentKey
+import ss.libraries.navigation3.EntryProviderBuilder
 
 @Module
 @InstallIn(SingletonComponent::class)
-internal class CircuitModule {
+object DocumentNavModule {
 
-  @Provides
-  @ElementsIntoSet
-  fun provideDefaultUiFactories(): Set<@JvmSuppressWildcards Ui.Factory> = emptySet()
-
-  @Provides
-  @ElementsIntoSet
-  fun provideDefaultPresenterFactories(): Set<@JvmSuppressWildcards Presenter.Factory> = emptySet()
-
-  @Provides
-  @Singleton
-  fun provideCircuit(
-      uiFactories: Set<@JvmSuppressWildcards Ui.Factory>,
-      presenterFactories: Set<@JvmSuppressWildcards Presenter.Factory>
-  ): Circuit =
-      Circuit.Builder()
-          .addFactories(presenterFactories, uiFactories)
-          .build()
-
-    private fun Circuit.Builder.addFactories(
-        presenterFactories: Set<Presenter.Factory>,
-        uiFactories: Set<Ui.Factory>,
-    ) = apply {
-        for (factory in presenterFactories) {
-            addPresenterFactory(factory)
-        }
-        for (factory in uiFactories) {
-            addUiFactory(factory)
+    @Provides
+    @IntoSet
+    fun provideDocumentEntry(
+        actionsProducer: TopAppbarActionsProducer,
+        readerStyleStateProducer: ReaderStyleStateProducer,
+        segmentOverlayStateProducer: SegmentOverlayStateProducer,
+        userInputStateProducer: UserInputStateProducer,
+    ): EntryProviderBuilder = {
+        entry<DocumentKey> { key ->
+            DocumentScreen(
+                index = key.index,
+                segmentIndex = key.segmentIndex,
+                actionsProducer = actionsProducer,
+                readerStyleStateProducer = readerStyleStateProducer,
+                segmentOverlayStateProducer = segmentOverlayStateProducer,
+                userInputStateProducer = userInputStateProducer,
+            )
         }
     }
 }

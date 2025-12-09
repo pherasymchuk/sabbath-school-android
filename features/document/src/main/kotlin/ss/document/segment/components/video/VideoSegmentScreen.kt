@@ -22,37 +22,6 @@
 
 package ss.document.segment.components.video
 
-import android.content.Context
-import com.slack.circuit.runtime.CircuitUiEvent
-import com.slack.circuit.runtime.CircuitUiState
-import com.slack.circuit.runtime.screen.Screen
-import io.adventech.blockkit.model.BlockItem
-import io.adventech.blockkit.model.resource.VideoClipSegment
-import io.adventech.blockkit.ui.input.UserInputState
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.parcelize.Parcelize
-import ss.document.DocumentOverlayState
-import ss.document.components.DocumentTopAppBarAction
-
-@Parcelize
-data class VideoSegmentScreen(
-    val id: String,
-    val index: String,
-    val documentId: String,
-): Screen {
-
-    data class State(
-        val title: String,
-        val videos: ImmutableList<BlockItem.Video>,
-        val blocks: List<BlockItem>,
-        val userInputState: UserInputState,
-        val overlayState: DocumentOverlayState.BottomSheet?,
-        val eventSink: (Event) -> Unit,
-    ) : CircuitUiState
-
-    sealed interface Event : CircuitUiEvent {
-        data object OnNavBack : Event
-        data class PlayVideo(val context: Context, val video: VideoClipSegment) : Event
-        data class OnTopAppBarAction(val action: DocumentTopAppBarAction) : Event
-    }
-}
+// This file is kept for backwards compatibility.
+// The VideoSegmentContent composable should be used instead.
+// See VideoSegmentScreenUi.kt for the implementation.

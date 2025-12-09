@@ -22,15 +22,8 @@
 
 package app.ss.media.playback.ui.nowPlaying.mini
 
-import com.slack.circuit.runtime.CircuitUiEvent
-import com.slack.circuit.runtime.CircuitUiState
 import ss.services.media.ui.PlaybackConnection
 
 data class MiniPlayerState(
     val playbackConnection: PlaybackConnection,
-    val eventSink: (MiniPlayerEvent) -> Unit,
-) : CircuitUiState
-
-sealed interface MiniPlayerEvent : CircuitUiEvent {
-    data object Expand : MiniPlayerEvent
-}
+)

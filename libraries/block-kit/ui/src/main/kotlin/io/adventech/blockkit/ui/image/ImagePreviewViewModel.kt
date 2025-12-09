@@ -26,41 +26,53 @@ import android.app.DownloadManager
 import android.content.Context
 import android.os.Environment
 import android.widget.Toast
-import androidx.compose.runtime.Composable
 import androidx.core.net.toUri
-import com.slack.circuit.codegen.annotations.CircuitInject
-import com.slack.circuit.runtime.Navigator
-import com.slack.circuit.runtime.presenter.Presenter
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
-import dagger.hilt.components.SingletonComponent
-import io.adventech.blockkit.ui.image.ImagePreviewScreenState.Event
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 import app.ss.translations.R as L10nR
-import io.adventech.blockkit.ui.image.ImagePreviewScreenState as State
 
-class ImagePreviewPresenter @AssistedInject constructor(
-    @Assisted private val navigator: Navigator,
-    @Assisted private val screen: ImagePreviewScreen,
-) : Presenter<State> {
+sealed interface ImagePreviewNavEvent {
+    data object Close : ImagePreviewNavEvent
+}
 
-    @CircuitInject(ImagePreviewScreen::class, SingletonComponent::class)
-    @AssistedFactory
-    interface Factory {
-        fun create(navigator: Navigator, screen: ImagePreviewScreen): ImagePreviewPresenter
+@HiltViewModel
+class ImagePreviewViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
+) : ViewModel() {
+
+    private val id: String = savedStateHandle["id"] ?: ""
+    private val src: String = savedStateHandle["src"] ?: ""
+    private val caption: String? = savedStateHandle["caption"]
+
+    private val _uiState = MutableStateFlow(
+        ImagePreviewScreenState(
+            src = src,
+            caption = caption,
+        )
+    )
+    val uiState: StateFlow<ImagePreviewScreenState> = _uiState.asStateFlow()
+
+    private val _navEvents = MutableSharedFlow<ImagePreviewNavEvent>()
+    val navEvents: SharedFlow<ImagePreviewNavEvent> = _navEvents.asSharedFlow()
+
+    fun onClose() {
+        viewModelScope.launch {
+            _navEvents.emit(ImagePreviewNavEvent.Close)
+        }
     }
 
-    @Composable
-    override fun present(): State {
-        return State(
-            src = screen.src,
-            caption = screen.caption,
-        ) { event ->
-            when (event) {
-                Event.Close -> navigator.pop()
-                is Event.Download -> downloadImage(event.context, screen.src, screen.id)
-            }
-        }
+    fun onDownload(context: Context) {
+        downloadImage(context, src, id)
     }
 
     private fun downloadImage(context: Context, url: String, fileName: String) {

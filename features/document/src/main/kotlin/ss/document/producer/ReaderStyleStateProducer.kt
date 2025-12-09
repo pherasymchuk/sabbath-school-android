@@ -25,7 +25,7 @@ package ss.document.producer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
-import com.slack.circuit.retained.produceRetainedState
+import androidx.compose.runtime.produceState
 import io.adventech.blockkit.ui.style.ReaderStyle
 import io.adventech.blockkit.ui.style.ReaderStyleConfig
 import kotlinx.coroutines.flow.flowOn
@@ -47,7 +47,7 @@ internal class ReaderStyleStateProducerImpl @Inject constructor(
 
     @Composable
     override fun invoke(): ReaderStyleConfig {
-        val displayOptions by produceRetainedState(
+        val displayOptions by produceState(
             SSReadingDisplayOptions(
                 theme = ReaderStyle.Theme.Auto.value,
                 font = ReaderStyle.Typeface.Lato.value,

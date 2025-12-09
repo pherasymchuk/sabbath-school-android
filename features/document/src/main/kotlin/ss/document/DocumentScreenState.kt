@@ -24,10 +24,6 @@ package ss.document
 
 import android.content.Context
 import androidx.compose.runtime.Immutable
-import com.slack.circuit.foundation.NavEvent
-import com.slack.circuit.runtime.CircuitUiEvent
-import com.slack.circuit.runtime.CircuitUiState
-import com.slack.circuit.runtime.screen.Screen
 import io.adventech.blockkit.model.BlockData
 import io.adventech.blockkit.model.Style
 import io.adventech.blockkit.model.resource.ReferenceModel
@@ -37,12 +33,20 @@ import io.adventech.blockkit.ui.style.ReaderStyleConfig
 import io.adventech.blockkit.ui.style.font.FontFamilyProvider
 import kotlinx.collections.immutable.ImmutableList
 import ss.document.components.DocumentTopAppBarAction
-import ss.document.segment.components.overlay.BlocksOverlay
-import ss.document.segment.components.overlay.ExcerptOverlay
+import ss.document.segment.components.overlay.BlocksOverlayState
+import ss.document.segment.components.overlay.ExcerptOverlayState
 import ss.document.segment.producer.SegmentOverlayStateProducer
-import ss.libraries.circuit.overlay.BottomSheetOverlay
+import ss.libraries.navigation3.NavKey
 
-sealed interface State : CircuitUiState {
+/** Navigation event for internal navigation actions. */
+sealed interface NavEvent {
+    /** Navigate to a destination with the given key. */
+    data class GoTo(val key: NavKey) : NavEvent
+    /** Navigate back. */
+    data object Pop : NavEvent
+}
+
+sealed interface State {
     val hasCover: Boolean
     val eventSink: (Event) -> Unit
 
@@ -72,7 +76,7 @@ sealed interface State : CircuitUiState {
 
 }
 
-sealed interface Event : CircuitUiEvent {
+sealed interface Event {
 
     /** Navigation icon is clicked. */
     data object OnNavBack : Event
@@ -90,16 +94,16 @@ sealed interface SuccessEvent : Event {
 }
 
 
-sealed interface DocumentOverlayState : CircuitUiState {
+sealed interface DocumentOverlayState {
 
-    /** Overlay state for a bottom sheet. */
+    /** Overlay state for a bottom sheet showing a nested screen. */
     @Immutable
     data class BottomSheet(
-        val screen: Screen,
+        val key: NavKey,
         val skipPartiallyExpanded: Boolean,
         val themed: Boolean,
         val feedback: Boolean,
-        val onResult: (BottomSheetOverlay.Result) -> Unit,
+        val onDismiss: () -> Unit,
     ) : DocumentOverlayState
 
     sealed interface Segment : DocumentOverlayState {
@@ -111,15 +115,26 @@ sealed interface DocumentOverlayState : CircuitUiState {
 
         @Immutable
         data class Excerpt(
-            val state: ExcerptOverlay.State,
-            val onResult: (ExcerptOverlay.Result) -> Unit
+            val state: ExcerptOverlayState,
+            val onDismiss: () -> Unit,
         ) : Segment
 
         @Immutable
         data class Blocks(
-            val state: BlocksOverlay.State,
-            val onResult: (BlocksOverlay.Result) -> Unit
+            val state: BlocksOverlayState,
+            val onDismiss: () -> Unit,
         ) : Segment
     }
 
+}
+
+/** Helper function to send events to the segment overlay state. */
+fun sendSegmentOverlayEvent(
+    state: DocumentOverlayState?,
+    event: SegmentOverlayStateProducer.Event
+) {
+    when (state) {
+        is DocumentOverlayState.Segment.None -> state.eventSink(event)
+        else -> Unit
+    }
 }

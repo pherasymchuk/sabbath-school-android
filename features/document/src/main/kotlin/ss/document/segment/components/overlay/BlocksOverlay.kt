@@ -39,7 +39,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -47,8 +46,6 @@ import androidx.compose.ui.unit.dp
 import app.ss.design.compose.extensions.haptics.LocalSsHapticFeedback
 import app.ss.design.compose.widget.icon.IconBox
 import app.ss.design.compose.widget.icon.Icons
-import com.slack.circuit.overlay.Overlay
-import com.slack.circuit.overlay.OverlayNavigator
 import io.adventech.blockkit.model.BlockItem
 import io.adventech.blockkit.ui.BlockContent
 import io.adventech.blockkit.ui.input.UserInputState
@@ -58,43 +55,38 @@ import io.adventech.blockkit.ui.style.background
 import io.adventech.blockkit.ui.style.primaryForeground
 import kotlinx.collections.immutable.ImmutableList
 
-class BlocksOverlay(private val state: State) : Overlay<BlocksOverlay.Result> {
+@Immutable
+data class BlocksOverlayState(
+    val blocks: ImmutableList<BlockItem>,
+    val style: ReaderStyleConfig,
+    val userInputState: UserInputState,
+)
 
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    override fun Content(navigator: OverlayNavigator<Result>) {
-        val hapticFeedback = LocalSsHapticFeedback.current
-        BlocksDialogSurface(
-            readerStyle = state.style,
-            modifier = Modifier,
-            onDismiss = { navigator.finish(Result.Dismissed) }
-        ) {
-            DialogContent(
-                state = state,
-                onDismiss = { navigator.finish(Result.Dismissed) },
-            )
-        }
-
-        LaunchedEffect(Unit) { hapticFeedback.performScreenView() }
+@Composable
+fun BlocksOverlayContent(
+    state: BlocksOverlayState,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val hapticFeedback = LocalSsHapticFeedback.current
+    BlocksDialogSurface(
+        readerStyle = state.style,
+        modifier = modifier,
+        onDismiss = onDismiss,
+    ) {
+        DialogContent(
+            state = state,
+            onDismiss = onDismiss,
+        )
     }
 
-    @Immutable
-    data class State(
-        val blocks: ImmutableList<BlockItem>,
-        val style: ReaderStyleConfig,
-        val userInputState: UserInputState,
-    )
-
-    @Stable
-    sealed interface Result {
-        data object Dismissed : Result
-    }
+    LaunchedEffect(Unit) { hapticFeedback.performScreenView() }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DialogContent(
-    state: BlocksOverlay.State,
+    state: BlocksOverlayState,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {

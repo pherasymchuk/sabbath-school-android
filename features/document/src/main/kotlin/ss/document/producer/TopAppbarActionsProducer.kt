@@ -27,14 +27,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import app.ss.models.PDFAux
-import com.slack.circuit.retained.produceRetainedState
-import com.slack.circuit.retained.rememberRetained
-import com.slack.circuit.runtime.CircuitUiState
-import com.slack.circuit.runtime.Navigator
-import com.slack.circuitx.android.IntentScreen
 import dagger.Lazy
 import io.adventech.blockkit.model.resource.Segment
 import io.adventech.blockkit.model.resource.SegmentType
@@ -46,12 +43,13 @@ import kotlinx.collections.immutable.toImmutableList
 import ss.document.DocumentOverlayState
 import ss.document.DocumentOverlayState.BottomSheet
 import ss.document.components.DocumentTopAppBarAction
-import ss.document.reader.ReaderOptionsScreen
 import ss.foundation.android.intent.ShareIntentHelper
-import ss.libraries.circuit.navigation.AudioPlayerScreen
-import ss.libraries.circuit.navigation.ShareOptionsScreen
-import ss.libraries.circuit.navigation.VideosScreen
+import ss.libraries.navigation3.AudioPlayerKey
 import ss.libraries.navigation3.PdfKey
+import ss.libraries.navigation3.ReaderOptionsKey
+import ss.libraries.navigation3.ShareOptionsKey
+import ss.libraries.navigation3.SsNavigator
+import ss.libraries.navigation3.VideosKey
 import ss.libraries.pdf.api.PdfReader
 import ss.resources.api.ResourcesRepository
 import javax.inject.Inject
@@ -60,7 +58,7 @@ data class TopAppbarActionsState(
     val actions: ImmutableList<DocumentTopAppBarAction>,
     val overlayState: DocumentOverlayState?,
     val eventSink: (Event) -> Unit
-) : CircuitUiState {
+) {
 
     sealed interface Event {
         data class OnActionClick(val action: DocumentTopAppBarAction, val context: Context) : Event
@@ -80,7 +78,7 @@ interface TopAppbarActionsProducer {
 
     @Composable
     operator fun invoke(
-        navigator: Navigator,
+        navigator: SsNavigator,
         resourceId: String,
         resourceIndex: String,
         documentIndex: String,
@@ -98,7 +96,7 @@ internal class TopAppbarActionsProducerImpl @Inject constructor(
 
     @Composable
     override fun invoke(
-        navigator: Navigator,
+        navigator: SsNavigator,
         resourceId: String,
         resourceIndex: String,
         documentIndex: String,
@@ -106,16 +104,16 @@ internal class TopAppbarActionsProducerImpl @Inject constructor(
         segment: Segment?,
         shareOptions: ShareOptions?,
     ): TopAppbarActionsState {
-        var bottomSheetState by rememberRetained { mutableStateOf<DocumentOverlayState?>(null) }
+        var bottomSheetState by rememberSaveable { mutableStateOf<DocumentOverlayState?>(null) }
 
-        val audio by produceRetainedState(emptyList()) {
+        val audio by produceState(emptyList()) {
             value = repository.audio(resourceIndex, documentIndex).getOrNull().orEmpty()
         }
-        val video by produceRetainedState(emptyList()) {
+        val video by produceState(emptyList()) {
             value = repository.video(resourceIndex, documentIndex).getOrNull().orEmpty()
         }
-        val pdfs by produceRetainedState(emptyList()) {
-            if (segment?.type == SegmentType.PDF) return@produceRetainedState
+        val pdfs by produceState(emptyList()) {
+            if (segment?.type == SegmentType.PDF) return@produceState
             value = repository.pdf(resourceIndex, documentIndex).getOrNull().orEmpty()
         }
         val actions = remember(audio, video, pdfs, segment, shareOptions) {
@@ -149,21 +147,21 @@ internal class TopAppbarActionsProducerImpl @Inject constructor(
                         when (event.action) {
                             DocumentTopAppBarAction.Audio -> {
                                 bottomSheetState = BottomSheet(
-                                    screen = AudioPlayerScreen(resourceId, segment?.id),
+                                    key = AudioPlayerKey(resourceId, segment?.id),
                                     skipPartiallyExpanded = true,
                                     themed = false,
                                     feedback = false,
-                                ) { _ ->
+                                ) {
                                     bottomSheetState = null
                                 }
                             }
                             DocumentTopAppBarAction.Video -> {
                                 bottomSheetState = BottomSheet(
-                                    screen = VideosScreen(documentIndex, documentId),
+                                    key = VideosKey(documentIndex, documentId),
                                     skipPartiallyExpanded = true,
                                     themed = false,
                                     feedback = false,
-                                ) { _ ->
+                                ) {
                                     bottomSheetState = null
                                 }
                             }
@@ -184,15 +182,15 @@ internal class TopAppbarActionsProducerImpl @Inject constructor(
                                         )
                                     },
                                 )
-                                navigator.goTo(IntentScreen(pdfReader.launchIntent(pdfKey)))
+                                navigator.launchIntent(pdfReader.launchIntent(pdfKey))
                             }
                             DocumentTopAppBarAction.DisplayOptions -> {
                                 bottomSheetState = BottomSheet(
-                                    screen = ReaderOptionsScreen,
+                                    key = ReaderOptionsKey,
                                     skipPartiallyExpanded = false,
                                     themed = false,
                                     feedback = false,
-                                ) { _ ->
+                                ) {
                                     bottomSheetState = null
                                 }
                             }
@@ -204,7 +202,7 @@ internal class TopAppbarActionsProducerImpl @Inject constructor(
                                     shareIntentHelper.get().shareText(event.context, shareLink)
                                 } else {
                                     bottomSheetState = BottomSheet(
-                                        screen = ShareOptionsScreen(
+                                        key = ShareOptionsKey(
                                             options = shareOptions,
                                             title = segment?.title ?: "",
                                             resourceColor = null,
@@ -212,7 +210,7 @@ internal class TopAppbarActionsProducerImpl @Inject constructor(
                                         skipPartiallyExpanded = false,
                                         themed = false,
                                         feedback = false,
-                                    ) { _ ->
+                                    ) {
                                         bottomSheetState = null
                                     }
                                 }

@@ -51,6 +51,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.ss.design.compose.theme.SsTheme
@@ -60,16 +61,35 @@ import app.ss.media.playback.ui.common.PlaybackSpeedLabel
 import app.ss.media.playback.ui.nowPlaying.components.BoxState
 import app.ss.media.playback.ui.nowPlaying.components.PlayBackControls
 import app.ss.media.playback.ui.nowPlaying.components.PlaybackProgressDuration
-import com.slack.circuit.codegen.annotations.CircuitInject
-import dagger.hilt.components.SingletonComponent
-import ss.libraries.circuit.navigation.AudioPlayerScreen
 import ss.libraries.media.model.PlaybackSpeed
 import app.ss.translations.R as L10nR
 import ss.libraries.media.resources.R as MediaR
 
-@CircuitInject(AudioPlayerScreen::class, SingletonComponent::class)
+/**
+ * Audio player screen composable that renders based on [AudioPlayerState].
+ * @param resourceId The resource ID to load audio for.
+ * @param segmentId Optional segment ID to start from.
+ * @param modifier Modifier for this composable.
+ * @param viewModel The ViewModel that manages audio player state.
+ */
+@Suppress("DEPRECATION")
 @Composable
-fun AudioPlayerScreenUi(state: AudioPlayerState, modifier: Modifier = Modifier) {
+fun AudioPlayerScreen(
+    resourceId: String,
+    segmentId: String?,
+    modifier: Modifier = Modifier,
+    viewModel: AudioPlayerViewModel = hiltViewModel(),
+) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    AudioPlayerScreenContent(state = state, modifier = modifier)
+}
+
+@Composable
+internal fun AudioPlayerScreenContent(
+    state: AudioPlayerState,
+    modifier: Modifier = Modifier,
+) {
     when (state) {
         is AudioPlayerState.NowPlaying -> {
             NowPlayingScreen(

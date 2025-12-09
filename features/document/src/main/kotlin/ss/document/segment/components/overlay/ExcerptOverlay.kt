@@ -49,7 +49,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -66,8 +65,6 @@ import app.ss.design.compose.extensions.haptics.LocalSsHapticFeedback
 import app.ss.design.compose.theme.SsTheme
 import app.ss.design.compose.widget.icon.IconBox
 import app.ss.design.compose.widget.icon.Icons
-import com.slack.circuit.overlay.Overlay
-import com.slack.circuit.overlay.OverlayNavigator
 import io.adventech.blockkit.model.BlockItem
 import io.adventech.blockkit.ui.ExcerptItemContent
 import io.adventech.blockkit.ui.ExcerptOptions
@@ -80,45 +77,43 @@ import io.adventech.blockkit.ui.style.primaryForeground
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.launch
 
-class ExcerptOverlay(private val state: State) : Overlay<ExcerptOverlay.Result> {
+@Immutable
+data class ExcerptOverlayState(
+    val excerpt: BlockItem.Excerpt,
+    val style: ReaderStyleConfig,
+    val userInputState: UserInputState,
+)
 
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    override fun Content(navigator: OverlayNavigator<Result>) {
-        val hapticFeedback = LocalSsHapticFeedback.current
-        var selectedOption by remember { mutableStateOf<String?>(null) }
+@Composable
+fun ExcerptOverlayContent(
+    state: ExcerptOverlayState,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val hapticFeedback = LocalSsHapticFeedback.current
+    var selectedOption by remember { mutableStateOf<String?>(null) }
 
-        BlocksDialogSurface(
-            readerStyle = state.style,
-            modifier = Modifier,
-            onDismiss = { navigator.finish(Result.Dismissed(selectedOption)) }
-        ) {
-            DialogContent(
-                state = state,
-                onDismiss = { navigator.finish(Result.Dismissed(selectedOption)) },
-                onSelectionChange = { selectedOption = it }
-            )
+    BlocksDialogSurface(
+        readerStyle = state.style,
+        modifier = modifier,
+        onDismiss = {
+            // Note: selectedOption could be passed through a callback if needed
+            onDismiss()
         }
-        LaunchedEffect(Unit) { hapticFeedback.performScreenView() }
+    ) {
+        DialogContent(
+            state = state,
+            onDismiss = onDismiss,
+            onSelectionChange = { selectedOption = it }
+        )
     }
-
-    @Immutable
-    data class State(
-        val excerpt: BlockItem.Excerpt,
-        val style: ReaderStyleConfig,
-        val userInputState: UserInputState,
-    )
-
-    @Stable
-    sealed interface Result {
-        data class Dismissed(val bibleVersion: String?) : Result
-    }
+    LaunchedEffect(Unit) { hapticFeedback.performScreenView() }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DialogContent(
-    state: ExcerptOverlay.State,
+    state: ExcerptOverlayState,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     onSelectionChange: (String) -> Unit = {},

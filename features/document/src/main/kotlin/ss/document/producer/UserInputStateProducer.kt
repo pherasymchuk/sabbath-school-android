@@ -26,8 +26,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
-import com.slack.circuit.retained.produceRetainedState
-import com.slack.circuit.retained.rememberRetained
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import io.adventech.blockkit.model.input.UserInput
 import io.adventech.blockkit.ui.input.UserInputState
 import kotlinx.collections.immutable.toImmutableList
@@ -48,13 +48,13 @@ internal class UserInputStateProducerImpl @Inject constructor(
 
     @Composable
     override fun invoke(documentId: String?): UserInputState {
-        val input by produceRetainedState(emptyList<UserInput>(), documentId) {
+        val input by produceState(emptyList<UserInput>(), documentId) {
             documentId?.let { resourcesRepository.documentInput(it).collect { value = it } }
         }
-        val bibleVersion by produceRetainedState<String?>(null) {
+        val bibleVersion by produceState<String?>(null) {
             resourcesRepository.bibleVersion().collect { value = it }
         }
-        var collapseContent = rememberRetained { mutableStateMapOf<String, Boolean>() }
+        var collapseContent = remember { mutableStateMapOf<String, Boolean>() }
 
         return UserInputState(
             input = input.toImmutableList(),

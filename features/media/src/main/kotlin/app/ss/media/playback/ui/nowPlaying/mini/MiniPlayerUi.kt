@@ -24,19 +24,37 @@ package app.ss.media.playback.ui.nowPlaying.mini
 
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import com.slack.circuit.codegen.annotations.CircuitInject
-import dagger.hilt.components.SingletonComponent
-import ss.libraries.circuit.navigation.MiniAudioPlayerScreen
+import androidx.hilt.navigation.compose.hiltViewModel
+import ss.libraries.navigation3.LocalSsNavigator
 import ss.services.media.ui.PlaybackMiniControls
 
-@CircuitInject(MiniAudioPlayerScreen::class, SingletonComponent::class)
+/**
+ * Mini audio player screen composable.
+ * @param modifier Modifier for this composable.
+ * @param viewModel The ViewModel that manages mini player state.
+ */
+@Suppress("DEPRECATION")
 @Composable
-fun MiniPlayerUi(state: MiniPlayerState, modifier: Modifier = Modifier) {
+fun MiniPlayerScreen(
+    modifier: Modifier = Modifier,
+    viewModel: MiniPlayerViewModel = hiltViewModel(),
+) {
+    val navigator = LocalSsNavigator.current
+
+    LaunchedEffect(Unit) {
+        viewModel.navEvents.collect { event ->
+            when (event) {
+                is MiniPlayerNavEvent.NavigateTo -> navigator.goTo(event.key)
+            }
+        }
+    }
+
     PlaybackMiniControls(
-        playbackConnection = state.playbackConnection,
+        playbackConnection = viewModel.playbackConnection,
         modifier = modifier.navigationBarsPadding()
     ) {
-        state.eventSink(MiniPlayerEvent.Expand)
+        viewModel.onExpand()
     }
 }

@@ -24,19 +24,44 @@ package app.ss.media.playback.ui.video
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import com.slack.circuit.codegen.annotations.CircuitInject
-import dagger.hilt.components.SingletonComponent
-import ss.libraries.circuit.navigation.VideosScreen
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import ss.libraries.navigation3.LocalSsNavigator
 
-@CircuitInject(VideosScreen::class, SingletonComponent::class)
+/**
+ * Videos screen composable that displays a list of videos.
+ * @param documentIndex The document index to load videos for.
+ * @param documentId Optional document ID.
+ * @param modifier Modifier for this composable.
+ * @param viewModel The ViewModel that manages videos state.
+ */
+@Suppress("DEPRECATION")
 @Composable
-fun VideosScreenUi(state: VideosScreenState, modifier: Modifier = Modifier) {
+fun VideosScreen(
+    documentIndex: String,
+    documentId: String?,
+    modifier: Modifier = Modifier,
+    viewModel: VideosViewModel = hiltViewModel(),
+) {
+    val navigator = LocalSsNavigator.current
     val context = LocalContext.current
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) {
+        viewModel.navEvents.collect { event ->
+            when (event) {
+                is VideosNavEvent.LaunchIntent -> navigator.launchIntent(event.intent)
+            }
+        }
+    }
+
     VideoListScreen(
         videoList = state.data,
         modifier = modifier.fillMaxSize(),
-        onVideoClick = { state.eventSink(VideosScreenEvent.OnVideoSelected(context, it)) },
+        onVideoClick = { viewModel.onVideoSelected(context, it) },
     )
 }

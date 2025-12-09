@@ -22,52 +22,70 @@
 
 package ss.document.segment.hidden
 
-import com.slack.circuit.foundation.NavEvent
-import com.slack.circuit.runtime.CircuitUiEvent
-import com.slack.circuit.runtime.CircuitUiState
-import com.slack.circuit.runtime.screen.Screen
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.adventech.blockkit.model.BlockData
-import io.adventech.blockkit.model.BlockItem
-import io.adventech.blockkit.model.Style
 import io.adventech.blockkit.ui.input.UserInputState
 import io.adventech.blockkit.ui.style.ReaderStyleConfig
-import io.adventech.blockkit.ui.style.font.FontFamilyProvider
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.parcelize.Parcelize
 import ss.document.DocumentOverlayState
+import ss.document.NavEvent
+import ss.document.producer.ReaderStyleStateProducer
+import ss.document.producer.UserInputStateProducer
+import ss.document.segment.producer.SegmentOverlayStateProducer
+import ss.libraries.navigation3.SsNavigator
 
-@Parcelize
-data class HiddenSegmentScreen(
-    val id: String,
-    val index: String,
-    val documentIndex: String,
-): Screen {
+/** Events for HiddenSegment UI. */
+sealed interface HiddenSegmentEvent {
+    data class OnHandleUri(val uri: String, val data: BlockData?) : HiddenSegmentEvent
+    data class OnNavEvent(val navEvent: NavEvent) : HiddenSegmentEvent
+}
 
-    sealed interface State : CircuitUiState {
-        val readerStyle: ReaderStyleConfig
+/**
+ * Composable entry point for HiddenSegment screen.
+ */
+@Suppress("DEPRECATION")
+@Composable
+fun HiddenSegmentScreen(
+    id: String,
+    index: String,
+    documentIndex: String,
+    navigator: SsNavigator,
+    readerStyleStateProducer: ReaderStyleStateProducer,
+    segmentOverlayStateProducer: SegmentOverlayStateProducer,
+    userInputStateProducer: UserInputStateProducer,
+    viewModel: HiddenSegmentViewModel = hiltViewModel(
+        creationCallback = { factory: HiddenSegmentViewModel.Factory ->
+            factory.create(id, index, documentIndex)
+        }
+    ),
+) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val readerStyle = readerStyleStateProducer()
+    val userInputState = userInputStateProducer(viewModel.documentId)
+    val overlayState = segmentOverlayStateProducer(navigator, userInputState)
 
-        data class Loading(
-            override val readerStyle: ReaderStyleConfig
-        ) : State
-
-        data class Success(
-            val title: String,
-            val subtitle: String?,
-            val date: String?,
-            val blocks: ImmutableList<BlockItem>,
-            val style: Style?,
-            val fontFamilyProvider: FontFamilyProvider,
-            val overlayState: DocumentOverlayState?,
-            val userInputState: UserInputState,
-            override val readerStyle: ReaderStyleConfig,
-            val eventSink: (Event) -> Unit,
-        ) : State
-    }
-
-    sealed interface Event : CircuitUiEvent {
-
-        data class OnHandleUri(val uri: String, val data: BlockData?): Event
-
-        data class OnNavEvent(val navEvent: NavEvent): Event
-    }
+    HiddenSegmentContent(
+        state = state,
+        readerStyle = readerStyle,
+        overlayState = overlayState,
+        userInputState = userInputState,
+        onEvent = { event ->
+            when (event) {
+                is HiddenSegmentEvent.OnHandleUri -> {
+                    ss.document.sendSegmentOverlayEvent(
+                        overlayState,
+                        SegmentOverlayStateProducer.Event.OnHandleUri(event.uri, event.data)
+                    )
+                }
+                is HiddenSegmentEvent.OnNavEvent -> {
+                    when (val navEvent = event.navEvent) {
+                        is NavEvent.GoTo -> navigator.goTo(navEvent.key)
+                        NavEvent.Pop -> navigator.pop()
+                    }
+                }
+            }
+        }
+    )
 }

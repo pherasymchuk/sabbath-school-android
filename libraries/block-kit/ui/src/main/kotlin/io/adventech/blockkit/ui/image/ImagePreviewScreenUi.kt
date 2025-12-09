@@ -61,14 +61,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImagePainter
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import coil.size.Scale
 import coil.size.Size
-import com.slack.circuit.codegen.annotations.CircuitInject
-import dagger.hilt.components.SingletonComponent
-import io.adventech.blockkit.ui.image.ImagePreviewScreenState.Event
 import io.adventech.blockkit.ui.style.LatoFontFamily
 import io.adventech.blockkit.ui.style.theme.BlocksPreviewTheme
 import kotlinx.coroutines.delay
@@ -82,12 +81,54 @@ import me.saket.telephoto.zoomable.ZoomSpec
 import me.saket.telephoto.zoomable.ZoomableContentLocation
 import me.saket.telephoto.zoomable.rememberZoomableState
 import me.saket.telephoto.zoomable.zoomable
+import ss.libraries.navigation3.LocalSsNavigator
 import app.ss.translations.R as L10nR
 
+/**
+ * Image preview screen composable.
+ * @param id The image ID.
+ * @param src The image source URL.
+ * @param caption Optional image caption.
+ * @param modifier Modifier for this composable.
+ * @param viewModel The ViewModel that manages image preview state.
+ */
+@Suppress("DEPRECATION")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalTelephotoApi::class)
-@CircuitInject(ImagePreviewScreen::class, SingletonComponent::class)
 @Composable
-fun ImagePreviewScreenUi(state: ImagePreviewScreenState, modifier: Modifier = Modifier) {
+fun ImagePreviewScreen(
+    id: String,
+    src: String,
+    caption: String?,
+    modifier: Modifier = Modifier,
+    viewModel: ImagePreviewViewModel = hiltViewModel(),
+) {
+    val navigator = LocalSsNavigator.current
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) {
+        viewModel.navEvents.collect { event ->
+            when (event) {
+                ImagePreviewNavEvent.Close -> navigator.pop()
+            }
+        }
+    }
+
+    ImagePreviewScreenContent(
+        state = state,
+        modifier = modifier,
+        onClose = { viewModel.onClose() },
+        onDownload = { viewModel.onDownload(it) },
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalTelephotoApi::class)
+@Composable
+internal fun ImagePreviewScreenContent(
+    state: ImagePreviewScreenState,
+    modifier: Modifier = Modifier,
+    onClose: () -> Unit = {},
+    onDownload: (android.content.Context) -> Unit = {},
+) {
     val context = LocalContext.current
     var hasStoragePermission by remember {
         // Storage permission is not required on Android R and above.
@@ -97,7 +138,7 @@ fun ImagePreviewScreenUi(state: ImagePreviewScreenState, modifier: Modifier = Mo
         hasStoragePermission = wasGranted
 
         if (wasGranted) {
-            state.eventSink(Event.Download(context))
+            onDownload(context)
         }
     }
 
@@ -107,7 +148,7 @@ fun ImagePreviewScreenUi(state: ImagePreviewScreenState, modifier: Modifier = Mo
         when (val gestureState = flickState.gestureState) {
             is FlickToDismissState.GestureState.Dismissing -> {
                 delay(gestureState.animationDuration / 2)
-                state.eventSink(Event.Close)
+                onClose()
             }
             else -> Unit
         }
@@ -131,10 +172,10 @@ fun ImagePreviewScreenUi(state: ImagePreviewScreenState, modifier: Modifier = Mo
         }
 
         TopRowActions(
-            onBack = { state.eventSink(Event.Close) },
+            onBack = onClose,
             onDownload = {
                 if (hasStoragePermission) {
-                    state.eventSink(Event.Download(context))
+                    onDownload(context)
                 } else {
                     launcher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 }
@@ -251,11 +292,10 @@ private val zoomSpec = ZoomSpec(maximum = ZoomLimit(factor = 4f, overzoomEffect 
 private fun DialogPreview() {
     BlocksPreviewTheme {
         Surface {
-            ImagePreviewScreenUi(
+            ImagePreviewScreenContent(
                 state = ImagePreviewScreenState(
                     src = "https://images.unsplash.com/photo-1632210000000-0b1b3b3b3b3b",
                     caption = "Lorem ipsum dolor sit amet consectetur adipiscing elit",
-                    eventSink = {},
                 ),
             )
         }

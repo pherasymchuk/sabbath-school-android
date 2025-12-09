@@ -49,9 +49,8 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import app.ss.design.compose.extensions.modifier.asPlaceholder
 import app.ss.design.compose.extensions.window.containerWidth
-import com.slack.circuit.codegen.annotations.CircuitInject
-import dagger.hilt.components.SingletonComponent
 import io.adventech.blockkit.ui.BlockContent
+import io.adventech.blockkit.ui.input.UserInputState
 import io.adventech.blockkit.ui.style.LocalBlocksStyle
 import io.adventech.blockkit.ui.style.LocalReaderStyle
 import io.adventech.blockkit.ui.style.LocalSegmentStyle
@@ -60,29 +59,51 @@ import io.adventech.blockkit.ui.style.background
 import io.adventech.blockkit.ui.style.font.LocalFontFamilyProvider
 import io.adventech.blockkit.ui.style.primaryForeground
 import ss.document.DocumentOverlay
+import ss.document.DocumentOverlayState
 import ss.document.segment.components.SegmentHeader
-import ss.document.segment.hidden.HiddenSegmentScreen.Event
-import ss.document.segment.hidden.HiddenSegmentScreen.State
 
-@CircuitInject(HiddenSegmentScreen::class, SingletonComponent::class)
 @Composable
-fun HiddenSegmentUi(state: State, modifier: Modifier = Modifier) {
+internal fun HiddenSegmentContent(
+    state: HiddenSegmentState,
+    readerStyle: ReaderStyleConfig,
+    overlayState: DocumentOverlayState?,
+    userInputState: UserInputState,
+    modifier: Modifier = Modifier,
+    onEvent: (HiddenSegmentEvent) -> Unit = {},
+) {
     when (state) {
-        is State.Loading -> HiddenSegmentContent(state, modifier)
-        is State.Success -> HiddenSegmentContent(state, modifier)
+        is HiddenSegmentState.Loading -> {
+            HiddenSegmentLoadingContent(readerStyle, modifier)
+        }
+        is HiddenSegmentState.Success -> {
+            HiddenSegmentSuccessContent(
+                state = state,
+                readerStyle = readerStyle,
+                overlayState = overlayState,
+                userInputState = userInputState,
+                modifier = modifier,
+                onEvent = onEvent,
+            )
+        }
     }
 }
 
 @Composable
-private fun HiddenSegmentContent(state: State.Success, modifier: Modifier = Modifier) {
-    val readerStyle = state.readerStyle
+private fun HiddenSegmentSuccessContent(
+    state: HiddenSegmentState.Success,
+    readerStyle: ReaderStyleConfig,
+    overlayState: DocumentOverlayState?,
+    userInputState: UserInputState,
+    modifier: Modifier = Modifier,
+    onEvent: (HiddenSegmentEvent) -> Unit = {},
+) {
     val contentColor = readerStyle.theme.primaryForeground()
 
     CompositionLocalProvider(
         LocalFontFamilyProvider provides state.fontFamilyProvider,
         LocalBlocksStyle provides state.style?.blocks,
         LocalSegmentStyle provides state.style?.segment,
-        LocalReaderStyle provides state.readerStyle,
+        LocalReaderStyle provides readerStyle,
     ) {
         HiddenSegmentScaffold(readerStyle, modifier) {
             item {
@@ -101,23 +122,23 @@ private fun HiddenSegmentContent(state: State.Success, modifier: Modifier = Modi
             items(state.blocks, key = { it.id }) { blockItem ->
                 BlockContent(
                     blockItem = blockItem,
-                    userInputState = state.userInputState,
+                    userInputState = userInputState,
                     onHandleUri = { uri, data ->
-                        state.eventSink(Event.OnHandleUri(uri, data))
+                        onEvent(HiddenSegmentEvent.OnHandleUri(uri, data))
                     }
                 )
             }
         }
 
-        DocumentOverlay(state.overlayState, readerStyle) {
-            state.eventSink(Event.OnNavEvent(it))
-        }
+        DocumentOverlay(overlayState, readerStyle)
     }
 }
 
 @Composable
-private fun HiddenSegmentContent(state: State.Loading, modifier: Modifier = Modifier) {
-    val readerStyle = state.readerStyle
+private fun HiddenSegmentLoadingContent(
+    readerStyle: ReaderStyleConfig,
+    modifier: Modifier = Modifier
+) {
     val contentColor = readerStyle.theme.primaryForeground()
     val screenWidth = LocalWindowInfo.current.containerWidth()
 
