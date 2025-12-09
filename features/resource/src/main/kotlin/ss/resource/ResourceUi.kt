@@ -37,7 +37,9 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -50,122 +52,164 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.ss.design.compose.extensions.color.parse
 import app.ss.design.compose.extensions.color.toAndroidColor
 import app.ss.design.compose.extensions.haptics.LocalSsHapticFeedback
 import app.ss.design.compose.theme.SsTheme
 import app.ss.design.compose.widget.scaffold.HazeScaffold
 import app.ss.design.compose.widget.scaffold.SystemUiEffect
-import com.slack.circuit.codegen.annotations.CircuitInject
-import com.slack.circuit.foundation.CircuitContent
-import com.slack.circuit.overlay.OverlayEffect
-import dagger.hilt.components.SingletonComponent
+import io.adventech.blockkit.model.resource.ProgressTracking
 import io.adventech.blockkit.ui.style.font.LocalFontFamilyProvider
 import io.noties.markwon.Markwon
-import ss.libraries.circuit.navigation.ResourceScreen
-import ss.libraries.circuit.navigation.ShareOptionsScreen
-import ss.libraries.circuit.overlay.BottomSheetOverlay
+import kotlinx.collections.immutable.persistentListOf
+import ss.libraries.navigation3.LocalSsNavigator
+import ss.libraries.navigation3.NavKey
+import ss.libraries.navigation3.ShareOptionsKey
 import ss.resource.components.CoverContent
 import ss.resource.components.ResourceCover
 import ss.resource.components.ResourceLoadingView
 import ss.resource.components.ResourceTopAppBar
+import ss.resource.components.content.ResourceSectionsStateProducer
 import ss.resource.components.footer
 import ss.resource.components.footerBackgroundColor
 import ss.resource.components.resourceSections
 import ss.resource.components.spec.SharePosition
+import ss.resource.producer.CtaScreenState
+import ss.resource.producer.ResourceCtaScreenProducer
 import com.cryart.design.R as DesignR
 
+@Suppress("DEPRECATION")
 @OptIn(ExperimentalMaterial3Api::class)
-@CircuitInject(ResourceScreen::class, SingletonComponent::class)
 @Composable
-fun ResourceUi(state: State, modifier: Modifier = Modifier) {
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+fun ResourceScreen(
+    index: String,
+    modifier: Modifier = Modifier,
+    viewModel: ResourceViewModel = hiltViewModel(),
+    resourceCtaScreenProducer: ResourceCtaScreenProducer,
+    resourceSectionsStateProducer: ResourceSectionsStateProducer,
+) {
+    val navigator = LocalSsNavigator.current
     val hapticFeedback = LocalSsHapticFeedback.current
     val context = LocalContext.current
+
+    LaunchedEffect(index) { viewModel.setIndex(index) }
+
+    LaunchedEffect(Unit) {
+        viewModel.navEvents.collect { event ->
+            when (event) {
+                is ResourceNavEvent.NavigateTo -> navigator.goTo(event.key)
+                ResourceNavEvent.NavigateBack -> navigator.pop()
+            }
+        }
+    }
+
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val listState: LazyListState = rememberLazyListState()
     val collapsed by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 } }
     val isSystemInDarkTheme = isSystemInDarkTheme()
     val lightStatusBar by remember(collapsed, isSystemInDarkTheme) { derivedStateOf { !isSystemInDarkTheme && collapsed } }
 
+    val resource by viewModel.resource.collectAsStateWithLifecycle()
+    val overlayState by viewModel.overlayState.collectAsStateWithLifecycle()
+    val credits by viewModel.credits.collectAsStateWithLifecycle()
+    val features by viewModel.features.collectAsStateWithLifecycle()
+    val sharePosition by viewModel.sharePosition.collectAsStateWithLifecycle()
+
+    val sections = resource?.let { res ->
+        resourceSectionsStateProducer(navigator, res).specs
+    } ?: persistentListOf()
+
+    val ctaScreen = resourceCtaScreenProducer(resource)
+    val readDocumentTitle = remember(resource, ctaScreen) {
+        (ctaScreen as? CtaScreenState.NavigateToKey)?.title?.takeIf {
+            resource?.progressTracking in setOf(ProgressTracking.AUTOMATIC, ProgressTracking.AUTOMATIC)
+        } ?: ""
+    }
+
     HazeScaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            val successState = (state as? State.Success)
             ResourceTopAppBar(
                 isShowingNavigationBar = collapsed,
-                title = state.title,
+                title = resource?.title ?: "",
                 modifier = Modifier,
-                iconTint = successState?.primaryColorDark?.let { Color.parse(it) },
-                showShare = successState?.sharePosition == SharePosition.TOOLBAR,
+                iconTint = resource?.primaryColorDark?.let { Color.parse(it) },
+                showShare = sharePosition == SharePosition.TOOLBAR,
                 scrollBehavior = scrollBehavior,
                 onNavBack = {
                     hapticFeedback.performClick()
-                    state.eventSink(Event.OnNavBack)
+                    viewModel.navigateBack()
                 },
                 onShareClick = {
                     hapticFeedback.performClick()
-                    successState?.eventSink?.invoke(Event.OnShareClick(context))
+                    viewModel.onShareClick(context)
                 }
             )
         },
         blurTopBar = collapsed,
     ) {
         val color by animateColorAsState(
-            targetValue = if (state is State.Success) {
+            targetValue = if (resource != null) {
                 footerBackgroundColor()
             } else {
                 SsTheme.colors.primaryBackground
             }, label = "background-color"
         )
 
-        when (state) {
-            is State.Loading -> {
-                ResourceLoadingView(state = listState)
-            }
+        if (resource == null) {
+            ResourceLoadingView(state = listState)
+        } else {
+            val res = resource!!
 
-            is State.Success -> {
-                val resource = state.resource
-
-                CompositionLocalProvider(
-                    LocalFontFamilyProvider provides state.fontFamilyProvider,
+            CompositionLocalProvider(
+                LocalFontFamilyProvider provides viewModel.fontFamilyProvider,
+            ) {
+                LazyColumn(
+                    modifier = Modifier.background(color),
+                    state = listState,
                 ) {
-                    LazyColumn(
-                        modifier = Modifier.background(color),
-                        state = listState,
-                    ) {
-                        item("cover") {
-                            ResourceCover(
-                                resource = resource,
-                                scrollOffset = { listState.firstVisibleItemScrollOffset.toFloat() },
-                                modifier = Modifier,
-                                content = {
-                                    CoverContent(
-                                        resource = resource,
-                                        documentTitle = state.readDocumentTitle,
-                                        type = it,
-                                        ctaOnClick = {
-                                            hapticFeedback.performScreenView()
-                                            state.eventSink(Event.OnCtaClick)
-                                        },
-                                        readMoreClick = {
-                                            state.eventSink(Event.OnReadMoreClick)
-                                        },
-                                        shareClick = {
-                                            hapticFeedback.performClick()
-                                            state.eventSink(Event.OnShareClick(context))
+                    item("cover") {
+                        ResourceCover(
+                            resource = res,
+                            scrollOffset = { listState.firstVisibleItemScrollOffset.toFloat() },
+                            modifier = Modifier,
+                            content = {
+                                CoverContent(
+                                    resource = res,
+                                    documentTitle = readDocumentTitle.takeUnless { it.isBlank() },
+                                    type = it,
+                                    ctaOnClick = {
+                                        hapticFeedback.performScreenView()
+                                        when (ctaScreen) {
+                                            is CtaScreenState.NavigateToKey -> navigator.goTo(ctaScreen.key)
+                                            is CtaScreenState.LaunchIntent -> navigator.launchIntent(ctaScreen.intent)
+                                            CtaScreenState.None -> Unit
                                         }
-                                    )
-                                }
-                            )
-                        }
-
-                        resourceSections(state.sections)
-
-                        footer(state.credits, state.features)
+                                    },
+                                    readMoreClick = {
+                                        viewModel.onReadMoreClick()
+                                    },
+                                    shareClick = {
+                                        hapticFeedback.performClick()
+                                        viewModel.onShareClick(context)
+                                    }
+                                )
+                            }
+                        )
                     }
 
-                    OverlayContent(state.overlayState)
+                    resourceSections(sections)
+
+                    footer(credits, features)
                 }
+
+                OverlayContent(
+                    state = overlayState,
+                    onDismiss = viewModel::dismissOverlay,
+                    onNavigate = navigator::goTo,
+                )
             }
         }
     }
@@ -173,47 +217,60 @@ fun ResourceUi(state: State, modifier: Modifier = Modifier) {
     SystemUiEffect(lightStatusBar)
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun OverlayContent(state: ResourceOverlayState?) {
+private fun OverlayContent(
+    state: ResourceOverlayState?,
+    onDismiss: () -> Unit,
+    onNavigate: (NavKey) -> Unit,
+) {
     val hapticFeedback = LocalSsHapticFeedback.current
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    OverlayEffect(state) {
-        when (state) {
-            is ResourceOverlayState.IntroductionBottomSheet -> state.onResult(
-                show(BottomSheetOverlay(skipPartiallyExpanded = true) {
-                    Column(
+    when (state) {
+        is ResourceOverlayState.IntroductionBottomSheet -> {
+            ModalBottomSheet(
+                onDismissRequest = onDismiss,
+                sheetState = sheetState,
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp)
+                ) {
+                    MarkdownText(
+                        text = state.markdown,
                         modifier = Modifier
                             .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .padding(horizontal = 16.dp)
-                    ) {
-                        MarkdownText(
-                            text = state.markdown,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 8.dp, vertical = 16.dp),
-                        )
+                            .padding(horizontal = 8.dp, vertical = 16.dp),
+                    )
 
-                        Spacer(modifier = Modifier.height(48.dp))
-                    }
+                    Spacer(modifier = Modifier.height(48.dp))
+                }
 
-                    LaunchedEffect(Unit) { hapticFeedback.performScreenView() }
-
-                })
-            )
-            is ResourceOverlayState.ShareBottomSheet -> state.onResult(
-                show(BottomSheetOverlay(skipPartiallyExpanded = true) {
-                    CircuitContent(
-                        screen = ShareOptionsScreen(
+                LaunchedEffect(Unit) { hapticFeedback.performScreenView() }
+            }
+        }
+        is ResourceOverlayState.ShareBottomSheet -> {
+            ModalBottomSheet(
+                onDismissRequest = onDismiss,
+                sheetState = sheetState,
+            ) {
+                // Navigate to ShareOptions screen
+                LaunchedEffect(Unit) {
+                    onNavigate(
+                        ShareOptionsKey(
                             options = state.options,
                             resourceColor = state.primaryColorDark,
                             title = state.title,
                         )
                     )
-                })
-            )
-            null -> Unit
+                    onDismiss()
+                }
+            }
         }
+        null -> Unit
     }
 }
 

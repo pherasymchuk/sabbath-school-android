@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024. Adventech <info@adventech.io>
+ * Copyright (c) 2025. Adventech <info@adventech.io>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,20 +20,9 @@
  * THE SOFTWARE.
  */
 
-package ss.resource
+package ss.libraries.navigation3
 
-import io.adventech.blockkit.model.resource.ShareOptions
-
-/** Overlay state for resource screen. */
-sealed interface ResourceOverlayState {
-
-    data class IntroductionBottomSheet(
-        val markdown: String,
-    ) : ResourceOverlayState
-
-    data class ShareBottomSheet(
-        val options: ShareOptions,
-        val primaryColorDark: String,
-        val title: String,
-    ) : ResourceOverlayState
-}
+/**
+ * Re-export NavKey from Navigation 3 runtime for use by feature modules.
+ */
+typealias NavKey = androidx.navigation3.runtime.NavKey

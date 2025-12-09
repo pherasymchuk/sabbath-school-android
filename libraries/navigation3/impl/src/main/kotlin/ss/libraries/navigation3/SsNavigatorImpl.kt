@@ -22,6 +22,7 @@
 
 package ss.libraries.navigation3
 
+import android.content.Intent
 import androidx.activity.ComponentActivity
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
@@ -53,5 +54,9 @@ class SsNavigatorImpl(
     override fun resetRoot(key: NavKey) {
         backStack.clear()
         backStack.add(key)
+    }
+    
+    override fun launchIntent(intent: Intent) {
+        activity.startActivity(intent)
     }
 }

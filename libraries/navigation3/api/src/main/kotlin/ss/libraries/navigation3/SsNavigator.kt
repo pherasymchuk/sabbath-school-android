@@ -22,6 +22,7 @@
 
 package ss.libraries.navigation3
 
+import android.content.Intent
 import androidx.navigation3.runtime.NavKey
 
 /**
@@ -37,4 +38,7 @@ interface SsNavigator {
 
     /** Reset the back stack to the given root key. */
     fun resetRoot(key: NavKey)
+    
+    /** Launch an intent. */
+    fun launchIntent(intent: Intent)
 }

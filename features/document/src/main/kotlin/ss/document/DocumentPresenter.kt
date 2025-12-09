@@ -59,8 +59,8 @@ import ss.document.producer.UserInputStateProducer
 import ss.document.segment.producer.SegmentOverlayStateProducer
 import ss.libraries.circuit.navigation.DocumentScreen
 import ss.libraries.circuit.navigation.ExpandedAudioPlayerScreen
-import ss.libraries.circuit.navigation.PdfScreen
 import ss.libraries.circuit.navigation.ResourceScreen
+import ss.libraries.navigation3.PdfKey
 import ss.libraries.pdf.api.PdfReader
 import ss.misc.DateHelper
 import ss.resources.api.ResourcesRepository
@@ -226,7 +226,7 @@ class DocumentPresenter @AssistedInject constructor(
 
         if (blocks.isEmpty() && pdfs.isNotEmpty()) {
             val pdfs = segments.flatMap { it.pdf.orEmpty() }
-            val screen = PdfScreen(
+            val pdfKey = PdfKey(
                 documentId = document.id,
                 resourceId = document.resourceId,
                 resourceIndex = document.resourceIndex,
@@ -244,7 +244,7 @@ class DocumentPresenter @AssistedInject constructor(
             )
             Snapshot.withMutableSnapshot {
                 navigator.pop()
-                navigator.goTo(IntentScreen(pdfReader.launchIntent(screen)))
+                navigator.goTo(IntentScreen(pdfReader.launchIntent(pdfKey)))
             }
         }
     }

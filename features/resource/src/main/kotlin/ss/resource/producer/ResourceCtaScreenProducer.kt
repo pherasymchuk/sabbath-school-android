@@ -22,29 +22,32 @@
 
 package ss.resource.producer
 
+import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
-import com.slack.circuit.retained.rememberRetained
-import com.slack.circuit.runtime.CircuitUiState
-import com.slack.circuit.runtime.screen.Screen
-import com.slack.circuitx.android.IntentScreen
+import androidx.compose.runtime.remember
 import io.adventech.blockkit.model.feed.FeedType
 import io.adventech.blockkit.model.resource.Resource
 import org.joda.time.DateTime
 import org.joda.time.DateTimeConstants
 import org.joda.time.Interval
-import ss.libraries.circuit.navigation.DocumentScreen
+import ss.libraries.navigation3.DocumentKey
+import ss.libraries.navigation3.NavKey
 import ss.libraries.pdf.api.PdfReader
 import ss.misc.DateHelper
-import ss.resource.components.content.pdfScreen
+import ss.resource.components.content.pdfKey
 import javax.inject.Inject
 
-sealed interface CtaScreenState : CircuitUiState {
+sealed interface CtaScreenState {
     data object None : CtaScreenState
 
-    data class Default(
-        val screen: Screen,
+    data class NavigateToKey(
+        val key: NavKey,
         val title: String?,
+    ) : CtaScreenState
+
+    data class LaunchIntent(
+        val intent: Intent,
     ) : CtaScreenState
 }
 
@@ -61,13 +64,13 @@ internal class ResourceCtaScreenProducerImpl @Inject constructor(
 
     @Composable
     override fun invoke(resource: Resource?): CtaScreenState {
-        return rememberRetained (resource) { resource?.let { calculateScreen(resource)  } ?: CtaScreenState.None }
+        return remember(resource) { resource?.let { calculateScreen(resource) } ?: CtaScreenState.None }
     }
 
     private fun calculateScreen(
         resource: Resource,
         today: DateTime = DateTime.now()
-    ): CtaScreenState.Default? {
+    ): CtaScreenState? {
         val sections = resource.sections ?: return null
         val isSabbathMorning = today.dayOfWeek().get() == DateTimeConstants.SATURDAY && today.hourOfDay().get() < 12
         val dateTime = if (isSabbathMorning && resource.type == FeedType.SS) {
@@ -84,11 +87,11 @@ internal class ResourceCtaScreenProducerImpl @Inject constructor(
                 val fallsBetween = Interval(startDate, endDate.plusDays(1)).contains(dateTime)
 
                 if (fallsBetween) {
-                    document.pdfScreen()?.let {
-                        return CtaScreenState.Default(IntentScreen(pdfReader.launchIntent(it)), null)
+                    document.pdfKey()?.let {
+                        return CtaScreenState.LaunchIntent(pdfReader.launchIntent(it))
                     }
 
-                    return CtaScreenState.Default(DocumentScreen(document.index), document.title)
+                    return CtaScreenState.NavigateToKey(DocumentKey(document.index), document.title)
                 }
             }
         }
@@ -98,7 +101,7 @@ internal class ResourceCtaScreenProducerImpl @Inject constructor(
         // Default to the first document and section
         return sections.firstOrNull()?.let { section ->
             section.documents.firstOrNull()?.let { document ->
-                CtaScreenState.Default(DocumentScreen(document.index), null)
+                CtaScreenState.NavigateToKey(DocumentKey(document.index), null)
             }
         }
     }

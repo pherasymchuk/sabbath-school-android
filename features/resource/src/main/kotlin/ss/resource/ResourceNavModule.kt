@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024. Adventech <info@adventech.io>
+ * Copyright (c) 2025. Adventech <info@adventech.io>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,18 +22,32 @@
 
 package ss.resource
 
-import io.adventech.blockkit.model.resource.ShareOptions
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+import dagger.multibindings.IntoSet
+import ss.libraries.navigation3.EntryProviderBuilder
+import ss.libraries.navigation3.ResourceKey
+import ss.resource.components.content.ResourceSectionsStateProducer
+import ss.resource.producer.ResourceCtaScreenProducer
 
-/** Overlay state for resource screen. */
-sealed interface ResourceOverlayState {
+@Module
+@InstallIn(SingletonComponent::class)
+object ResourceNavModule {
 
-    data class IntroductionBottomSheet(
-        val markdown: String,
-    ) : ResourceOverlayState
-
-    data class ShareBottomSheet(
-        val options: ShareOptions,
-        val primaryColorDark: String,
-        val title: String,
-    ) : ResourceOverlayState
+    @Provides
+    @IntoSet
+    fun provideResourceEntry(
+        resourceCtaScreenProducer: ResourceCtaScreenProducer,
+        resourceSectionsStateProducer: ResourceSectionsStateProducer,
+    ): EntryProviderBuilder = {
+        entry<ResourceKey> { key ->
+            ResourceScreen(
+                index = key.index,
+                resourceCtaScreenProducer = resourceCtaScreenProducer,
+                resourceSectionsStateProducer = resourceSectionsStateProducer,
+            )
+        }
+    }
 }

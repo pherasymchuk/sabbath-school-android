@@ -49,9 +49,9 @@ import ss.document.components.DocumentTopAppBarAction
 import ss.document.reader.ReaderOptionsScreen
 import ss.foundation.android.intent.ShareIntentHelper
 import ss.libraries.circuit.navigation.AudioPlayerScreen
-import ss.libraries.circuit.navigation.PdfScreen
 import ss.libraries.circuit.navigation.ShareOptionsScreen
 import ss.libraries.circuit.navigation.VideosScreen
+import ss.libraries.navigation3.PdfKey
 import ss.libraries.pdf.api.PdfReader
 import ss.resources.api.ResourcesRepository
 import javax.inject.Inject
@@ -168,7 +168,7 @@ internal class TopAppbarActionsProducerImpl @Inject constructor(
                                 }
                             }
                             DocumentTopAppBarAction.Pdf -> {
-                                val screen = PdfScreen(
+                                val pdfKey = PdfKey(
                                     documentId = documentId,
                                     resourceId = resourceId,
                                     documentIndex = documentIndex,
@@ -184,7 +184,7 @@ internal class TopAppbarActionsProducerImpl @Inject constructor(
                                         )
                                     },
                                 )
-                                navigator.goTo(IntentScreen(pdfReader.launchIntent(screen)))
+                                navigator.goTo(IntentScreen(pdfReader.launchIntent(pdfKey)))
                             }
                             DocumentTopAppBarAction.DisplayOptions -> {
                                 bottomSheetState = BottomSheet(

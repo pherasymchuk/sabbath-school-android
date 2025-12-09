@@ -26,12 +26,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.dp
-import com.slack.circuit.retained.rememberRetained
-import com.slack.circuit.runtime.CircuitUiState
-import com.slack.circuit.runtime.Navigator
-import com.slack.circuitx.android.IntentScreen
 import io.adventech.blockkit.model.feed.FeedResourceKind
 import io.adventech.blockkit.model.resource.Resource
 import io.adventech.blockkit.model.resource.ResourceDocument
@@ -41,8 +39,9 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import org.joda.time.DateTime
 import org.joda.time.Interval
-import ss.libraries.circuit.navigation.CustomTabsIntentScreen
-import ss.libraries.circuit.navigation.DocumentScreen
+import ss.libraries.navigation3.CustomTabsKey
+import ss.libraries.navigation3.DocumentKey
+import ss.libraries.navigation3.SsNavigator
 import ss.libraries.pdf.api.PdfReader
 import ss.misc.DateHelper
 import javax.inject.Inject
@@ -50,14 +49,14 @@ import kotlin.collections.lastIndex
 
 data class ResourceSectionsState(
     val specs: ImmutableList<ResourceSectionSpec>,
-) : CircuitUiState
+)
 
 /** Produces [ResourceSectionsState] by building out the required [ResourceSectionSpec]s.*/
 @Stable
 interface ResourceSectionsStateProducer {
 
     @Composable
-    operator fun invoke(navigator: Navigator, resource: Resource): ResourceSectionsState
+    operator fun invoke(navigator: SsNavigator, resource: Resource): ResourceSectionsState
 }
 
 internal class ResourceSectionsStateProducerImpl @Inject constructor(
@@ -65,17 +64,19 @@ internal class ResourceSectionsStateProducerImpl @Inject constructor(
 ) : ResourceSectionsStateProducer {
 
     @Composable
-    override fun invoke(navigator: Navigator, resource: Resource): ResourceSectionsState {
+    override fun invoke(navigator: SsNavigator, resource: Resource): ResourceSectionsState {
         val onDocumentClick: (ResourceDocument) -> Unit = { document ->
             when {
                 !document.externalURL.isNullOrEmpty() -> document.externalURL?.let {
-                    navigator.goTo(CustomTabsIntentScreen(it))
+                    navigator.goTo(CustomTabsKey(it))
                 }
                 else -> {
-                    val screen = document.pdfScreen()?.let {
-                        IntentScreen(pdfReader.launchIntent(it))
-                    } ?: DocumentScreen(document.index)
-                    navigator.goTo(screen)
+                    val pdfKey = document.pdfKey()
+                    if (pdfKey != null) {
+                        navigator.launchIntent(pdfReader.launchIntent(pdfKey))
+                    } else {
+                        navigator.goTo(DocumentKey(document.index))
+                    }
                 }
             }
         }
@@ -97,7 +98,7 @@ internal class ResourceSectionsStateProducerImpl @Inject constructor(
     private fun rememberNormalViewTypeSpecs(
         resource: Resource,
         onDocumentClick: (ResourceDocument) -> Unit,
-    ): List<ResourceSectionSpec> = rememberRetained(resource) {
+    ): List<ResourceSectionSpec> = remember(resource) {
         buildList {
             resource.sections.orEmpty().forEachIndexed { index, section ->
                 if (!section.isRoot) {
@@ -118,20 +119,22 @@ internal class ResourceSectionsStateProducerImpl @Inject constructor(
         resource: Resource,
         onDocumentClick: (ResourceDocument) -> Unit,
     ): List<ResourceSectionSpec> {
-        var selectedSection by rememberRetained(resource) { mutableStateOf(resource.defaultSection()) }
+        var selectedSection by rememberSaveable(resource) { mutableStateOf(resource.defaultSection()?.id) }
+        val actualSelectedSection = resource.sections.orEmpty().firstOrNull { it.id == selectedSection }
+            ?: resource.defaultSection()
 
-        return rememberRetained(resource, selectedSection) {
+        return remember(resource, selectedSection) {
             buildList {
                 add(
                     MenuResourceSection(
                         id = "popup-${resource.id}",
                         sections = resource.sections.orEmpty().toImmutableList(),
-                        defaultSection = selectedSection,
-                        onSelection = { selectedSection = it }
+                        defaultSection = actualSelectedSection,
+                        onSelection = { selectedSection = it.id }
                     )
                 )
 
-                selectedSection?.let { addAll(documentsSpecs(it, resource.kind, onDocumentClick)) }
+                actualSelectedSection?.let { addAll(documentsSpecs(it, resource.kind, onDocumentClick)) }
             }
         }
     }
@@ -171,6 +174,6 @@ internal class ResourceSectionsStateProducerImpl @Inject constructor(
             }
         }
 
-        return sections.orEmpty().first { it.isRoot == false }
+        return sections.orEmpty().firstOrNull { it.isRoot == false }
     }
 }

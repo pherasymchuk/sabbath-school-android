@@ -24,12 +24,12 @@ package ss.resource.components.content
 
 import app.ss.models.PDFAux
 import io.adventech.blockkit.model.resource.ResourceDocument
-import ss.libraries.circuit.navigation.PdfScreen
+import ss.libraries.navigation3.PdfKey
 import kotlin.collections.flatMap
 import kotlin.collections.orEmpty
 
-/** Returns a [PdfScreen] if the [ResourceDocument] contains only PDFs. */
-internal fun ResourceDocument.pdfScreen(): PdfScreen? {
+/** Returns a [PdfKey] if the [ResourceDocument] contains only PDFs. */
+internal fun ResourceDocument.pdfKey(): PdfKey? {
     val segments = segments.orEmpty()
 
     val blocks = segments.flatMap { it.blocks.orEmpty() }
@@ -37,7 +37,7 @@ internal fun ResourceDocument.pdfScreen(): PdfScreen? {
 
     if (blocks.isEmpty() && pdfs.isNotEmpty()) {
         val pdfs = segments.flatMap { it.pdf.orEmpty() }
-        return PdfScreen(
+        return PdfKey(
             documentId = id,
             documentIndex = index,
             resourceIndex = resourceIndex,
