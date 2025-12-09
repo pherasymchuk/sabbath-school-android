@@ -22,12 +22,15 @@
 
 package ss.libraries.navigation3
 
+import android.os.Parcelable
 import androidx.navigation3.runtime.NavKey
+import app.ss.models.PDFAux
+import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.Serializable
 import ss.libraries.navigation3.serializers.PdfAuxListSerializer
-import app.ss.models.PDFAux
 
 /** Navigation key for opening the PDF screen. */
+@Parcelize
 @Serializable
 data class PdfKey(
     val documentId: String,
@@ -37,4 +40,4 @@ data class PdfKey(
     val segmentId: String?,
     @Serializable(with = PdfAuxListSerializer::class)
     val pdfs: List<PDFAux>,
-) : NavKey
+) : NavKey, Parcelable

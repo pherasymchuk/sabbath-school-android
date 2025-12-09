@@ -20,33 +20,28 @@
  * THE SOFTWARE.
  */
 
-package ss.share.options
+package app.ss.languages
 
-import android.content.Context
-import androidx.compose.ui.graphics.Color
-import com.slack.circuit.runtime.CircuitUiEvent
-import com.slack.circuit.runtime.CircuitUiState
-import io.adventech.blockkit.model.resource.ShareFileURL
-import io.adventech.blockkit.model.resource.ShareGroup
-import io.adventech.blockkit.model.resource.ShareLinkURL
+import androidx.hilt.navigation.compose.hiltViewModel
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+import dagger.multibindings.IntoSet
+import ss.libraries.navigation3.EntryProviderBuilder
+import ss.libraries.navigation3.LanguagesKey
 
-data class ShareState(
-    val segments: List<String>,
-    val selectedGroup: ShareGroup,
-    val shareButtonState: ShareButtonState,
-    val themeColor: Color?,
-    val eventSink: (Event) ->  Unit,
-): CircuitUiState
+@Module
+@InstallIn(SingletonComponent::class)
+object LanguagesNavModule {
 
-enum class ShareButtonState {
-    ENABLED,
-    DISABLED,
-    LOADING
-}
-
-sealed interface Event : CircuitUiEvent {
-    data class OnSegmentSelected(val segment: String) : Event
-    data class OnShareUrlSelected(val url: ShareLinkURL) : Event
-    data class OnShareFileClicked(val file: ShareFileURL) : Event
-    data class OnShareButtonClicked(val context: Context) : Event
+    @Provides
+    @IntoSet
+    fun provideLanguagesEntry(): EntryProviderBuilder = {
+        entry<LanguagesKey> { _ ->
+            @Suppress("DEPRECATION")
+            val viewModel: LanguagesViewModel = hiltViewModel()
+            LanguagesScreen(viewModel = viewModel)
+        }
+    }
 }

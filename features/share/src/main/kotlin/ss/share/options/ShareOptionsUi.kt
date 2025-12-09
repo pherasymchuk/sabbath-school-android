@@ -46,6 +46,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,27 +62,68 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import app.ss.design.compose.extensions.haptics.LocalSsHapticFeedback
 import app.ss.design.compose.extensions.haptics.SsHapticFeedback
 import app.ss.design.compose.theme.SsTheme
 import app.ss.design.compose.widget.button.SsButtonDefaults
 import app.ss.design.compose.widget.icon.IconBox
 import app.ss.design.compose.widget.icon.Icons
-import com.slack.circuit.codegen.annotations.CircuitInject
-import dagger.hilt.components.SingletonComponent
 import io.adventech.blockkit.model.resource.ShareFileURL
 import io.adventech.blockkit.model.resource.ShareGroup
 import io.adventech.blockkit.model.resource.ShareLinkURL
+import io.adventech.blockkit.model.resource.ShareOptions
 import me.saket.cascade.CascadeDropdownMenu
 import me.saket.cascade.rememberCascadeState
-import ss.libraries.circuit.navigation.ShareOptionsScreen
 
-@CircuitInject(ShareOptionsScreen::class, SingletonComponent::class)
+@Suppress("DEPRECATION")
 @Composable
-fun ShareOptionsUi(state: ShareState, modifier: Modifier = Modifier) {
+fun ShareOptionsScreen(
+    options: ShareOptions,
+    title: String,
+    resourceColor: String?,
+    modifier: Modifier = Modifier,
+    viewModel: ShareOptionsViewModel = hiltViewModel(),
+) {
+    LaunchedEffect(options, title, resourceColor) {
+        viewModel.setArgs(options, title, resourceColor)
+    }
+
+    val state by viewModel.state.collectAsState()
+
+    ShareOptionsContent(
+        state = state,
+        modifier = modifier,
+        onSegmentSelected = viewModel::onSegmentSelected,
+        onShareUrlSelected = viewModel::onShareUrlSelected,
+        onShareFileClicked = viewModel::onShareFileClicked,
+        onShareLink = viewModel::shareLink,
+        onShareFile = viewModel::shareFile,
+    )
+}
+
+@Composable
+private fun ShareOptionsContent(
+    state: ShareState,
+    modifier: Modifier = Modifier,
+    onSegmentSelected: (String) -> Unit = {},
+    onShareUrlSelected: (ShareLinkURL) -> Unit = {},
+    onShareFileClicked: (ShareFileURL) -> Unit = {},
+    onShareLink: (android.content.Context, ShareLinkURL) -> Unit = { _, _ -> },
+    onShareFile: (android.content.Context, ShareFileURL) -> Unit = { _, _ -> },
+) {
     val hapticFeedback = LocalSsHapticFeedback.current
     val context = LocalContext.current
     val buttonColors = SsButtonDefaults.colors(containerColor = state.themeColor ?: SsTheme.colors.primary)
+
+    var selectedLink by remember { mutableStateOf<ShareLinkURL?>(null) }
+    var selectedFile by remember { mutableStateOf<ShareFileURL?>(null) }
+
+    // Reset selections when group changes
+    LaunchedEffect(state.selectedGroup) {
+        selectedLink = null
+        selectedFile = null
+    }
 
     Column(
         modifier = modifier
@@ -91,7 +133,7 @@ fun ShareOptionsUi(state: ShareState, modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         SingleChoiceSegmentedButtonRow(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
         ) {
@@ -100,7 +142,7 @@ fun ShareOptionsUi(state: ShareState, modifier: Modifier = Modifier) {
                     selected = state.selectedGroup.title == group,
                     onClick = {
                         hapticFeedback.performSegmentSwitch()
-                        state.eventSink(Event.OnSegmentSelected(group))
+                        onSegmentSelected(group)
                     },
                     colors = SegmentedButtonDefaults.colors(),
                     shape = SegmentedButtonDefaults.itemShape(index = index, count = state.segments.size)
@@ -113,14 +155,16 @@ fun ShareOptionsUi(state: ShareState, modifier: Modifier = Modifier) {
             }
         }
 
-        AnimatedContent(state.selectedGroup) { group ->
+        AnimatedContent(state.selectedGroup, label = "share_group") { group ->
             when (group) {
-                is ShareGroup.File -> FilesContent(group.files, hapticFeedback) {
-                    state.eventSink(Event.OnShareFileClicked(it))
+                is ShareGroup.File -> FilesContent(group.files, hapticFeedback) { file ->
+                    selectedFile = file
+                    onShareFileClicked(file)
                 }
 
-                is ShareGroup.Link -> LinksContent(group.links, hapticFeedback) {
-                    state.eventSink(Event.OnShareUrlSelected(it))
+                is ShareGroup.Link -> LinksContent(group.links, hapticFeedback) { link ->
+                    selectedLink = link
+                    onShareUrlSelected(link)
                 }
 
                 is ShareGroup.Unknown -> Unit
@@ -132,7 +176,8 @@ fun ShareOptionsUi(state: ShareState, modifier: Modifier = Modifier) {
         ElevatedButton(
             onClick = {
                 hapticFeedback.performClick()
-                state.eventSink(Event.OnShareButtonClicked(context))
+                selectedLink?.let { onShareLink(context, it) }
+                selectedFile?.let { onShareFile(context, it) }
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -310,7 +355,7 @@ private fun FilesContent(files: List<ShareFileURL>, hapticFeedback: SsHapticFeed
 private fun Preview() {
     SsTheme {
         Surface {
-            ShareOptionsUi(
+            ShareOptionsContent(
                 state = ShareState(
                     segments = listOf("Link", "File"),
                     selectedGroup = ShareGroup.Link(
@@ -329,7 +374,7 @@ private fun Preview() {
                     ),
                     shareButtonState = ShareButtonState.ENABLED,
                     themeColor = null,
-                ) {},
+                ),
                 modifier = Modifier.padding(16.dp),
             )
         }
@@ -341,7 +386,7 @@ private fun Preview() {
 private fun PreviewFile() {
     SsTheme {
         Surface {
-            ShareOptionsUi(
+            ShareOptionsContent(
                 state = ShareState(
                     segments = listOf("Link", "File"),
                     selectedGroup = ShareGroup.File(
@@ -362,7 +407,7 @@ private fun PreviewFile() {
                     ),
                     shareButtonState = ShareButtonState.LOADING,
                     themeColor = null,
-                ) {},
+                ),
                 modifier = Modifier.padding(16.dp),
             )
         }

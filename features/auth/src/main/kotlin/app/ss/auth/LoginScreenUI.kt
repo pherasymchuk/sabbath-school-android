@@ -36,6 +36,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -49,6 +50,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -69,27 +71,49 @@ import androidx.compose.ui.text.withLink
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import app.ss.design.compose.extensions.content.ContentSpec
 import app.ss.design.compose.extensions.snackbar.rememberSsSnackbarState
 import app.ss.design.compose.theme.LatoFontFamily
 import app.ss.design.compose.theme.SsTheme
 import app.ss.design.compose.theme.color.SsColors
-import com.slack.circuit.codegen.annotations.CircuitInject
-import com.slack.circuit.overlay.ContentWithOverlays
-import com.slack.circuit.overlay.LocalOverlayHost
-import com.slack.circuitx.overlays.DialogResult
-import dagger.hilt.components.SingletonComponent
-import ss.libraries.circuit.navigation.LoginScreen
-import ss.libraries.circuit.overlay.ssAlertDialogOverlay
+import ss.libraries.navigation3.LocalSsNavigator
 import app.ss.auth.R as AuthR
 import app.ss.translations.R as L10nR
 
-@CircuitInject(LoginScreen::class, SingletonComponent::class)
 @Composable
-fun LoginScreenUI(state: State, modifier: Modifier) {
+fun LoginScreen(
+    viewModel: LoginViewModel,
+    modifier: Modifier = Modifier,
+) {
+    val navigator = LocalSsNavigator.current
+    LaunchedEffect(navigator) {
+        viewModel.setNavigator(navigator)
+    }
+
+    val state by viewModel.state.collectAsState()
+    val context = LocalContext.current
+
+    LoginScreenContent(
+        state = state,
+        modifier = modifier,
+        onSignInWithGoogle = { viewModel.signInWithGoogle(context) },
+        onSignInAnonymously = viewModel::showConfirmAnonymousAuth,
+        onConfirmAnonymous = viewModel::confirmAnonymousAuth,
+        onDismissAnonymous = viewModel::dismissAnonymousAuth,
+    )
+}
+
+@Composable
+internal fun LoginScreenContent(
+    state: LoginState,
+    modifier: Modifier = Modifier,
+    onSignInWithGoogle: () -> Unit = {},
+    onSignInAnonymously: () -> Unit = {},
+    onConfirmAnonymous: () -> Unit = {},
+    onDismissAnonymous: () -> Unit = {},
+) {
     Scaffold(
         snackbarHost = {
-            if (state is State.Default) {
+            if (state is LoginState.Default && state.snackbarState != null) {
                 val snackbarState = rememberSsSnackbarState(state.snackbarState)
                 SnackbarHost(snackbarState, modifier = Modifier) { data -> Snackbar(snackbarData = data) }
             }
@@ -124,7 +148,7 @@ fun LoginScreenUI(state: State, modifier: Modifier) {
 
             Spacer(modifier = Modifier.weight(1f))
 
-            AnimatedVisibility(visible = state is State.Loading) {
+            AnimatedVisibility(visible = state is LoginState.Loading) {
                 Column {
                     CircularProgressIndicator(
                         modifier = Modifier
@@ -137,37 +161,38 @@ fun LoginScreenUI(state: State, modifier: Modifier) {
             }
 
             Buttons(
-                enabled = state != State.Loading,
+                enabled = state !is LoginState.Loading,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
-                eventSink = when (state) {
-                    is State.ConfirmSignInAnonymously,
-                    State.Loading -> { _ -> }
-
-                    is State.Default -> state.eventSink
-                }
+                onSignInWithGoogle = onSignInWithGoogle,
+                onSignInAnonymously = onSignInAnonymously,
             )
 
             Spacer(modifier = Modifier.weight(0.2f))
-
-            // Show the confirm overlay
-            (state as? State.ConfirmSignInAnonymously)?.let { OverlayContent(state.eventSink) }
         }
     }
 
+    // Show confirm anonymous auth dialog
+    if (state is LoginState.ConfirmSignInAnonymously) {
+        ConfirmAnonymousAuthDialog(
+            onConfirm = onConfirmAnonymous,
+            onDismiss = onDismissAnonymous,
+        )
+    }
 }
 
 @Composable
 private fun Buttons(
     enabled: Boolean,
     modifier: Modifier = Modifier,
-    eventSink: (Event) -> Unit = {},
+    onSignInWithGoogle: () -> Unit = {},
+    onSignInAnonymously: () -> Unit = {},
 ) {
     val context = LocalContext.current
 
     Column(modifier = modifier.width(270.dp)) {
 
         Button(
-            onClick = { eventSink(Event.SignInWithGoogle(context)) },
+            onClick = onSignInWithGoogle,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 4.dp),
@@ -199,7 +224,7 @@ private fun Buttons(
         }
 
         TextButton(
-            onClick = { eventSink(Event.SignInAnonymously) },
+            onClick = onSignInAnonymously,
             modifier = Modifier
                 .fillMaxWidth(),
             enabled = enabled,
@@ -249,26 +274,29 @@ private fun Buttons(
 }
 
 @Composable
-private fun OverlayContent(eventSink: (OverlayEvent) -> Unit) {
-    val overlayHost = LocalOverlayHost.current
-    LaunchedEffect(Unit) {
-        val result = overlayHost.show(
-            ssAlertDialogOverlay(
-                title = ContentSpec.Res(L10nR.string.ss_login_anonymously_dialog_title),
-                cancelText = ContentSpec.Res(L10nR.string.ss_login_anonymously_dialog_negative),
-                confirmText = ContentSpec.Res(L10nR.string.ss_login_anonymously_dialog_positive),
-                content = {
-                    Text(text = stringResource(id = L10nR.string.ss_login_anonymously_dialog_description))
-                },
-            )
-        )
-
-        when (result) {
-            DialogResult.Confirm -> eventSink(OverlayEvent.Confirm)
-            DialogResult.Cancel,
-            DialogResult.Dismiss -> eventSink(OverlayEvent.Dismiss)
+private fun ConfirmAnonymousAuthDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(text = stringResource(id = L10nR.string.ss_login_anonymously_dialog_title))
+        },
+        text = {
+            Text(text = stringResource(id = L10nR.string.ss_login_anonymously_dialog_description))
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(text = stringResource(id = L10nR.string.ss_login_anonymously_dialog_positive))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(id = L10nR.string.ss_login_anonymously_dialog_negative))
+            }
         }
-    }
+    )
 }
 
 @PreviewLightDark
@@ -276,8 +304,8 @@ private fun OverlayContent(eventSink: (OverlayEvent) -> Unit) {
 private fun UiPreview() {
     SsTheme(useDynamicTheme = false) {
         Surface {
-            LoginScreenUI(
-                state = State.Default(null) {},
+            LoginScreenContent(
+                state = LoginState.Default(null),
                 modifier = Modifier,
             )
         }
@@ -289,8 +317,8 @@ private fun UiPreview() {
 private fun UiPreviewLoading() {
     SsTheme(useDynamicTheme = false) {
         Surface {
-            LoginScreenUI(
-                state = State.Loading,
+            LoginScreenContent(
+                state = LoginState.Loading,
                 modifier = Modifier,
             )
         }
@@ -299,15 +327,13 @@ private fun UiPreviewLoading() {
 
 @PreviewLightDark
 @Composable
-private fun UiPreviewOverlay() {
+private fun UiPreviewDialog() {
     SsTheme {
-        ContentWithOverlays {
-            Surface {
-                LoginScreenUI(
-                    state = State.ConfirmSignInAnonymously {},
-                    modifier = Modifier,
-                )
-            }
+        Surface {
+            LoginScreenContent(
+                state = LoginState.ConfirmSignInAnonymously,
+                modifier = Modifier,
+            )
         }
     }
 }

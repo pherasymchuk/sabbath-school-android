@@ -22,39 +22,44 @@
 
 package app.ss.pdf
 
+import android.content.Context
 import androidx.compose.runtime.Composable
-import com.slack.circuit.codegen.annotations.CircuitInject
-import com.slack.circuit.runtime.Navigator
-import com.slack.circuit.runtime.presenter.Presenter
-import com.slack.circuitx.android.IntentScreen
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import ss.libraries.circuit.navigation.PdfScreen
+import dagger.multibindings.IntoSet
+import ss.libraries.navigation3.EntryProviderBuilder
+import ss.libraries.navigation3.PdfKey
 import ss.libraries.pdf.api.PdfReader
 
-class ReadPdfPresenter @AssistedInject constructor(
-    @Assisted private val navigator: Navigator,
-    @Assisted private val screen: PdfScreen,
-    private val pdfReader: PdfReader
-) : Presenter<ReadPdfState> {
+@Module
+@InstallIn(SingletonComponent::class)
+object PdfNavModule {
 
-    @Composable
-    override fun present(): ReadPdfState {
-        return ReadPdfState(
-            eventSink = { event ->
-                when (event) {
-                    ReadPdfEvent.OpenPdf -> {
-                        navigator.goTo(IntentScreen(pdfReader.launchIntent(screen)))
-                    }
-                }
-            })
+    @Provides
+    @IntoSet
+    fun providePdfEntry(pdfReader: PdfReader): EntryProviderBuilder = {
+        entry<PdfKey> { key ->
+            PdfLauncherScreen(key, pdfReader)
+        }
     }
+}
 
-    @CircuitInject(PdfScreen::class, SingletonComponent::class)
-    @AssistedFactory
-    interface Factory {
-        fun create(navigator: Navigator, screen: PdfScreen): ReadPdfPresenter
+/**
+ * A composable screen that immediately launches the PDF reader activity.
+ * This screen shows nothing but triggers the intent launch on composition.
+ */
+@Composable
+private fun PdfLauncherScreen(
+    key: PdfKey,
+    pdfReader: PdfReader,
+) {
+    val context = LocalContext.current
+    LaunchedEffect(key) {
+        val intent = pdfReader.launchIntent(key)
+        context.startActivity(intent)
     }
 }

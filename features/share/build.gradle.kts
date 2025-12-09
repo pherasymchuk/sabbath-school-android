@@ -10,20 +10,17 @@ foundry {
     features { compose() }
 }
 
-ksp {
-    arg("circuit.codegen.mode", "hilt")
-}
-
 dependencies {
     implementation(libs.google.hilt.android)
     implementation(libs.timber)
+    implementation(libs.androidx.hilt.navigation.compose)
 
     implementation(projects.common.designCompose)
     implementation(projects.libraries.blockKit.model)
     implementation(projects.libraries.cascadeCompose)
-    implementation(projects.libraries.circuit.api)
     implementation(projects.libraries.foundation.android)
+    implementation(projects.libraries.navigation3.api)
+    implementation(projects.libraries.navigation3.impl)
 
-    ksp(libs.circuit.codegen)
     ksp(libs.google.hilt.compiler)
 }

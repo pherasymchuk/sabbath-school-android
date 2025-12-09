@@ -20,15 +20,28 @@
  * THE SOFTWARE.
  */
 
-package app.ss.pdf
+package app.ss.auth
 
-import com.slack.circuit.runtime.CircuitUiState
+import androidx.hilt.navigation.compose.hiltViewModel
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+import dagger.multibindings.IntoSet
+import ss.libraries.navigation3.EntryProviderBuilder
+import ss.libraries.navigation3.LoginKey
 
-data class ReadPdfState(
-    val eventSink: (ReadPdfEvent) -> Unit,
-) : CircuitUiState
+@Module
+@InstallIn(SingletonComponent::class)
+object AuthNavModule {
 
-sealed interface ReadPdfEvent {
-    data object OpenPdf : ReadPdfEvent
+    @Provides
+    @IntoSet
+    fun provideAuthEntry(): EntryProviderBuilder = {
+        entry<LoginKey> { _ ->
+            @Suppress("DEPRECATION")
+            val viewModel: LoginViewModel = hiltViewModel()
+            LoginScreen(viewModel = viewModel)
+        }
+    }
 }
-

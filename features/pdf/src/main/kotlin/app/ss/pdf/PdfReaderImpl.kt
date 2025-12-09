@@ -42,7 +42,7 @@ import com.pspdfkit.ui.PdfActivityIntentBuilder
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.withContext
 import ss.foundation.coroutines.DispatcherProvider
-import ss.libraries.circuit.navigation.PdfScreen
+import ss.libraries.navigation3.PdfKey
 import ss.libraries.pdf.api.LocalFile
 import ss.libraries.pdf.api.PdfReader
 import timber.log.Timber
@@ -69,7 +69,7 @@ internal class PdfReaderImpl @Inject constructor(
         AnnotationType.FREETEXT
     )
 
-    override fun launchIntent(screen: PdfScreen): Intent {
+    override fun launchIntent(key: PdfKey): Intent {
         val excludedAnnotationTypes = ArrayList(EnumSet.allOf(AnnotationType::class.java))
         allowedAnnotations.forEach { excludedAnnotationTypes.remove(it) }
 
@@ -100,7 +100,7 @@ internal class PdfReaderImpl @Inject constructor(
             .configuration(config)
             .activityClass(SSReadPdfActivity::class.java)
             .build()
-            .apply { putExtra(ARG_PDF_SCREEN, screen) }
+            .apply { putExtra(ARG_PDF_SCREEN, key) }
     }
 
     override suspend fun downloadFiles(pdfs: List<PDFAux>): Result<List<LocalFile>> {

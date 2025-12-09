@@ -44,7 +44,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ss.foundation.coroutines.flow.stateIn
-import ss.libraries.circuit.navigation.PdfScreen
+import ss.libraries.navigation3.PdfKey
 import ss.libraries.pdf.api.LocalFile
 import ss.libraries.pdf.api.PdfReader
 import ss.resources.api.ResourcesRepository
@@ -61,19 +61,20 @@ class ReadPdfViewModel @Inject constructor(
     private val _pdfFiles = MutableStateFlow<List<LocalFile>>(emptyList())
     val pdfsFilesFlow: StateFlow<List<LocalFile>> = _pdfFiles.asStateFlow()
 
-    private val SavedStateHandle.screen: PdfScreen?
-        get() = get<PdfScreen>(ARG_PDF_SCREEN)
+    private val SavedStateHandle.pdfKey: PdfKey?
+        @Suppress("DEPRECATION")
+        get() = get<PdfKey>(ARG_PDF_SCREEN)
 
-    val resourceId: String? get() = savedStateHandle.screen?.resourceId
-    val documentIndex: String? get() = savedStateHandle.screen?.documentIndex
-    val segmentId: String? get() = savedStateHandle.screen?.segmentId
+    val resourceId: String? get() = savedStateHandle.pdfKey?.resourceId
+    val documentIndex: String? get() = savedStateHandle.pdfKey?.documentIndex
+    val segmentId: String? get() = savedStateHandle.pdfKey?.segmentId
 
     private val mediaAvailability = MutableStateFlow(MediaAvailability())
     val mediaAvailabilityFlow = mediaAvailability.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val annotationsStateFlow: StateFlow<Map<Int, List<PDFAuxAnnotations>>> =
-        flowOf(savedStateHandle.screen?.documentId)
+        flowOf(savedStateHandle.pdfKey?.documentId)
             .filterNotNull()
             .flatMapLatest(resourcesRepository::documentInput)
             .map {
@@ -82,7 +83,7 @@ class ReadPdfViewModel @Inject constructor(
                     .toList()
             }
             .map { input ->
-                val pdfs = savedStateHandle.screen?.pdfs.orEmpty()
+                val pdfs = savedStateHandle.pdfKey?.pdfs.orEmpty()
                 pdfs.mapIndexed { index, pdf ->
                     index to input.filter { it.pdfId == pdf.id }.flatMap { it.data }
                 }.toMap()
@@ -96,8 +97,8 @@ class ReadPdfViewModel @Inject constructor(
     }
 
     private fun checkMediaAvailability() {
-        val screen = savedStateHandle.screen ?: return
-        val (_, _, documentIndex, resourceIndex, _) = screen
+        val key = savedStateHandle.pdfKey ?: return
+        val (_, _, documentIndex, resourceIndex, _) = key
         viewModelScope.launch {
             val audioAvailable = resourcesRepository.audio(resourceIndex, documentIndex).getOrNull().orEmpty().isNotEmpty()
             val videoAvailable = resourcesRepository.video(resourceIndex, documentIndex).getOrNull().orEmpty().isNotEmpty()
@@ -107,15 +108,15 @@ class ReadPdfViewModel @Inject constructor(
     }
 
     private fun downloadFiles() = viewModelScope.launch {
-        val pdfs = savedStateHandle.screen?.pdfs ?: return@launch
+        val pdfs = savedStateHandle.pdfKey?.pdfs ?: return@launch
         val result = pdfReader.downloadFiles(pdfs)
         val files = result.getOrDefault(emptyList())
         _pdfFiles.update { files }
     }
 
     fun saveAnnotations(document: PdfDocument, docIndex: Int) {
-        val pdfs = savedStateHandle.screen?.pdfs ?: return
-        val documentId = savedStateHandle.screen?.documentId ?: return
+        val pdfs = savedStateHandle.pdfKey?.pdfs ?: return
+        val documentId = savedStateHandle.pdfKey?.documentId ?: return
         val pdfId = pdfs.getOrNull(docIndex)?.id ?: return
 
         val syncAnnotations = document.annotations().toSync()

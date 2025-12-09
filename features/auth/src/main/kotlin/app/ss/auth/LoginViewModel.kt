@@ -23,52 +23,54 @@
 package app.ss.auth
 
 import android.content.Context
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.GetCredentialResponse
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import app.ss.design.compose.extensions.content.ContentSpec
 import app.ss.design.compose.extensions.snackbar.SsSnackbarState
 import app.ss.models.config.AppConfig
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
-import com.slack.circuit.codegen.annotations.CircuitInject
-import com.slack.circuit.retained.rememberRetained
-import com.slack.circuit.runtime.Navigator
-import com.slack.circuit.runtime.presenter.Presenter
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
-import dagger.hilt.components.SingletonComponent
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import ss.foundation.coroutines.DispatcherProvider
-import ss.libraries.circuit.navigation.CustomTabsIntentScreen
-import ss.libraries.circuit.navigation.HomeNavScreen
-import ss.libraries.circuit.navigation.LoginScreen
+import ss.libraries.navigation3.CustomTabsKey
+import ss.libraries.navigation3.HomeNavKey
+import ss.libraries.navigation3.SsNavigator
 import timber.log.Timber
+import javax.inject.Inject
 import app.ss.translations.R as L10nR
 
-class LoginPresenter @AssistedInject constructor(
-    @Assisted private val navigator: Navigator,
+sealed interface LoginState {
+    data class Default(
+        val snackbarState: SsSnackbarState?,
+    ) : LoginState
+
+    data object Loading : LoginState
+    data object ConfirmSignInAnonymously : LoginState
+}
+
+@HiltViewModel
+class LoginViewModel @Inject constructor(
     private val appConfig: AppConfig,
     private val credentialManager: CredentialManagerWrapper,
     private val authRepository: AuthRepository,
     private val dispatcherProvider: DispatcherProvider,
-) : Presenter<State> {
+) : ViewModel() {
 
-    @CircuitInject(LoginScreen::class, SingletonComponent::class)
-    @AssistedFactory
-    interface Factory {
-        fun create(navigator: Navigator): LoginPresenter
-    }
+    private val _state = MutableStateFlow<LoginState>(LoginState.Default(snackbarState = null))
+    val state: StateFlow<LoginState> = _state.asStateFlow()
+
+    private var navigator: SsNavigator? = null
 
     private val getCredentialRequest: GetCredentialRequest by lazy {
         GetCredentialRequest.Builder()
@@ -76,62 +78,56 @@ class LoginPresenter @AssistedInject constructor(
             .build()
     }
 
+    fun setNavigator(navigator: SsNavigator) {
+        this.navigator = navigator
+    }
 
-    @Composable
-    override fun present(): State {
-        val scope = rememberCoroutineScope()
-        var isLoading by rememberRetained { mutableStateOf(false) }
-        var showConfirmAnonymousAuth by rememberRetained { mutableStateOf(false) }
-        var snackbarState by rememberRetained { mutableStateOf<SsSnackbarState?>(null) }
+    fun signInWithGoogle(context: Context) {
+        _state.value = LoginState.Loading
+        viewModelScope.launch {
+            val isAuthenticated = authWithGoogle(context).getOrElse { false }
+            if (isAuthenticated) {
+                navigator?.resetRoot(HomeNavKey)
+            } else {
+                onAuthError()
+            }
+        }
+    }
 
-        val onAuthError = {
-            isLoading = false
+    fun showConfirmAnonymousAuth() {
+        _state.value = LoginState.ConfirmSignInAnonymously
+    }
+
+    fun confirmAnonymousAuth() {
+        _state.value = LoginState.Loading
+        viewModelScope.launch {
+            val isAuthenticated = authAnonymously().getOrElse { false }
+            if (isAuthenticated) {
+                navigator?.resetRoot(HomeNavKey)
+            } else {
+                onAuthError()
+            }
+        }
+    }
+
+    fun dismissAnonymousAuth() {
+        _state.value = LoginState.Default(snackbarState = null)
+    }
+
+    fun dismissSnackbar() {
+        _state.value = LoginState.Default(snackbarState = null)
+    }
+
+    fun openPrivacyPolicy(context: Context) {
+        navigator?.goTo(CustomTabsKey(context.getString(L10nR.string.ss_privacy_policy_url)))
+    }
+
+    private fun onAuthError() {
+        _state.value = LoginState.Default(
             snackbarState = SsSnackbarState(message = ContentSpec.Res(L10nR.string.ss_login_failed)) {
-                snackbarState = null
+                dismissSnackbar()
             }
-        }
-        val eventSink: (Event) -> Unit = { event ->
-            when (event) {
-                is Event.SignInAnonymously -> showConfirmAnonymousAuth = true
-                is Event.SignInWithGoogle -> {
-                    isLoading = true
-                    scope.launch {
-                        val isAuthenticated = authWithGoogle(event.context).getOrElse { false }
-                        if (isAuthenticated) {
-                            navigator.resetRoot(HomeNavScreen)
-                        } else {
-                            onAuthError()
-                        }
-                    }
-                }
-
-                is Event.OpenPrivacyPolicy ->
-                    navigator.goTo(CustomTabsIntentScreen(event.context.getString(L10nR.string.ss_privacy_policy_url)))
-            }
-        }
-        return when {
-            isLoading -> State.Loading
-            showConfirmAnonymousAuth -> State.ConfirmSignInAnonymously { event ->
-                when (event) {
-                    OverlayEvent.Confirm -> {
-                        isLoading = true
-                        scope.launch {
-                            val isAuthenticated = authAnonymously().getOrElse { false }
-                            if (isAuthenticated) {
-                                navigator.resetRoot(HomeNavScreen)
-                            } else {
-                                showConfirmAnonymousAuth = false
-                                onAuthError()
-                            }
-                        }
-                    }
-
-                    OverlayEvent.Dismiss -> showConfirmAnonymousAuth = false
-                }
-            }
-
-            else -> State.Default(snackbarState, eventSink)
-        }
+        )
     }
 
     private suspend fun authWithGoogle(context: Context): Result<Boolean> {
@@ -177,5 +173,4 @@ class LoginPresenter @AssistedInject constructor(
         val signInResult = withContext(dispatcherProvider.default) { authRepository.signIn() }
         return Result.success(signInResult.getOrNull() is AuthResponse.Authenticated)
     }
-
 }

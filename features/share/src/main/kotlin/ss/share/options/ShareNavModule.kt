@@ -20,28 +20,29 @@
  * THE SOFTWARE.
  */
 
-package app.ss.pdf
+package ss.share.options
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import app.ss.design.compose.widget.button.ButtonSpec
-import app.ss.design.compose.widget.button.SsButton
-import com.slack.circuit.codegen.annotations.CircuitInject
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import ss.libraries.circuit.navigation.PdfScreen
+import dagger.multibindings.IntoSet
+import ss.libraries.navigation3.EntryProviderBuilder
+import ss.libraries.navigation3.ShareOptionsKey
 
-@CircuitInject(PdfScreen::class, SingletonComponent::class)
-@Composable
-fun ReadPdfUi(state: ReadPdfState, modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        SsButton(
-            spec = ButtonSpec(
-                text = "Open PDF",
-                onClick = { state.eventSink(ReadPdfEvent.OpenPdf) }
+@Module
+@InstallIn(SingletonComponent::class)
+object ShareNavModule {
+
+    @Provides
+    @IntoSet
+    fun provideShareOptionsEntry(): EntryProviderBuilder = {
+        entry<ShareOptionsKey> { key ->
+            ShareOptionsScreen(
+                options = key.options,
+                title = key.title,
+                resourceColor = key.resourceColor,
             )
-        )
+        }
     }
 }

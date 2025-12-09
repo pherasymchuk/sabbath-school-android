@@ -38,6 +38,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -51,64 +53,84 @@ import app.ss.design.compose.widget.icon.IconBox
 import app.ss.design.compose.widget.icon.Icons
 import app.ss.design.compose.widget.search.SearchInput
 import app.ss.languages.list.LanguagesList
-import app.ss.languages.state.Event
-import app.ss.languages.state.LanguagesEvent
-import app.ss.languages.state.State
-import com.slack.circuit.codegen.annotations.CircuitInject
-import dagger.hilt.components.SingletonComponent
-import ss.libraries.circuit.navigation.LanguagesScreen
+import app.ss.languages.state.LanguageUiModel
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import ss.libraries.navigation3.LocalSsNavigator
+
+@Composable
+fun LanguagesScreen(
+    viewModel: LanguagesViewModel,
+    modifier: Modifier = Modifier,
+) {
+    val navigator = LocalSsNavigator.current
+    LaunchedEffect(navigator) {
+        viewModel.setNavigator(navigator)
+    }
+
+    val state by viewModel.state.collectAsState()
+
+    LanguagesScreenContent(
+        state = state,
+        modifier = modifier,
+        onSearch = viewModel::search,
+        onSelectLanguage = viewModel::selectLanguage,
+        onNavigateBack = viewModel::navigateBack,
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
-@CircuitInject(LanguagesScreen::class, SingletonComponent::class)
 @Composable
-fun LanguagesScreenUi(state: State, modifier: Modifier) {
+internal fun LanguagesScreenContent(
+    state: LanguagesUiState,
+    modifier: Modifier = Modifier,
+    onSearch: (String?) -> Unit = {},
+    onSelectLanguage: (LanguageUiModel) -> Unit = {},
+    onNavigateBack: () -> Unit = {},
+) {
     val hapticFeedback = LocalSsHapticFeedback.current
     Scaffold(
-      modifier = modifier,
-      topBar = {
-        SearchView(
-            onQuery = { (state as? State.Languages)?.eventSink?.invoke(LanguagesEvent.Search(it)) },
-            onNavBack = {
-                hapticFeedback.performClick()
-                when (state) {
-                    is State.Languages -> state.eventSink(LanguagesEvent.NavBack)
-                    is State.Loading -> state.eventSink(Event.NavBack)
-                }
-            },
-            modifier =
-                Modifier.windowInsetsPadding(
+        modifier = modifier,
+        topBar = {
+            SearchView(
+                onQuery = onSearch,
+                onNavBack = {
+                    hapticFeedback.performClick()
+                    onNavigateBack()
+                },
+                modifier = Modifier.windowInsetsPadding(
                     WindowInsets.safeDrawing.only(WindowInsetsSides.Top),
                 ),
-        )
-      },
-  ) { paddingValues ->
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues),
-    ) {
-      Divider()
-
-      when (state) {
-        is State.Loading -> Box(Modifier.weight(1f))
-        is State.Languages ->
-            LanguagesList(
-                models = state.models,
-                onItemClick = {
-                    state.eventSink(LanguagesEvent.Select(it))
-                    hapticFeedback.performClick()
-                },
-                modifier = Modifier.weight(1f),
             )
-      }
+        },
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+        ) {
+            Divider()
+
+            when (state) {
+                is LanguagesUiState.Loading -> Box(Modifier.weight(1f))
+                is LanguagesUiState.Languages ->
+                    LanguagesList(
+                        models = state.models,
+                        onItemClick = {
+                            onSelectLanguage(it)
+                            hapticFeedback.performClick()
+                        },
+                        modifier = Modifier.weight(1f),
+                    )
+            }
+        }
     }
-  }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SearchView(
-    onQuery: (String) -> Unit,
+    onQuery: (String?) -> Unit,
     onNavBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -120,7 +142,7 @@ private fun SearchView(
                 value = queryValue,
                 onQueryChange = {
                     queryValue = it
-                    onQuery(it)
+                    onQuery(it.ifEmpty { null })
                 },
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = "Search Languages",
@@ -134,5 +156,32 @@ private fun SearchView(
 @PreviewLightDark
 @Composable
 private fun SearchPreview() {
-  SsTheme { Surface { SearchView(onQuery = {}, onNavBack = {}) } }
+    SsTheme { Surface { SearchView(onQuery = {}, onNavBack = {}) } }
+}
+
+@PreviewLightDark
+@Composable
+private fun LoadingPreview() {
+    SsTheme {
+        Surface {
+            LanguagesScreenContent(state = LanguagesUiState.Loading)
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun LanguagesPreview() {
+    SsTheme {
+        Surface {
+            LanguagesScreenContent(
+                state = LanguagesUiState.Languages(
+                    models = persistentListOf(
+                        LanguageUiModel("en", "English", "English", true),
+                        LanguageUiModel("es", "Spanish", "Español", false),
+                    )
+                )
+            )
+        }
+    }
 }

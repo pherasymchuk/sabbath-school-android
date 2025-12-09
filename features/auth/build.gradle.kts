@@ -15,14 +15,11 @@ foundry {
     android { features { robolectric() } }
 }
 
-ksp {
-    arg("circuit.codegen.mode", "hilt")
-}
-
 dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.auth)
+    implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.google.hilt.android)
     implementation(libs.google.id)
     implementation(libs.timber)
@@ -30,12 +27,12 @@ dependencies {
     implementation(projects.common.designCompose)
     implementation(projects.common.models)
     implementation(projects.common.translations)
-    implementation(projects.libraries.circuit.api)
     implementation(projects.libraries.foundation.coroutines)
+    implementation(projects.libraries.navigation3.api)
+    implementation(projects.libraries.navigation3.impl)
 
     testImplementation(libs.bundles.testing.common)
     testImplementation(projects.libraries.foundation.coroutines.test)
 
-    ksp(libs.circuit.codegen)
     ksp(libs.google.hilt.compiler)
 }

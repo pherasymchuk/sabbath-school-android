@@ -6,5 +6,5 @@ plugins {
 
 dependencies {
     implementation(projects.common.models)
-    implementation(projects.libraries.circuit.api)
+    implementation(projects.libraries.navigation3.api)
 }

@@ -25,6 +25,7 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.jetbrains.kotlin.serialization)
+    alias(libs.plugins.kotlin.parcelize)
 }
 
 android {
