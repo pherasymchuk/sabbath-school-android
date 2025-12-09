@@ -78,6 +78,8 @@ include(
     ":libraries:media:resources",
     ":libraries:media:service",
     ":libraries:media:test-fixtures",
+    ":libraries:navigation3:api",
+    ":libraries:navigation3:impl",
     ":libraries:pdf:api",
     ":libraries:prefs:api",
     ":libraries:prefs:model",
