@@ -41,8 +41,10 @@ dependencies {
 
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
+    implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.google.hilt.android)
+    implementation(libs.kotlinx.serialization.json)
 
     implementation(projects.common.core)
     implementation(projects.common.designCompose)

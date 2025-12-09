@@ -26,6 +26,7 @@ import io.adventech.blockkit.model.resource.ShareFileURL
 import io.adventech.blockkit.model.resource.ShareGroup
 import io.adventech.blockkit.model.resource.ShareLinkURL
 import io.adventech.blockkit.model.resource.ShareOptions
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -38,6 +39,7 @@ import kotlinx.serialization.encoding.decodeStructure
 import kotlinx.serialization.encoding.encodeStructure
 
 /** Serializer for [ShareLinkURL]. */
+@OptIn(ExperimentalSerializationApi::class)
 object ShareLinkURLSerializer : KSerializer<ShareLinkURL> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ShareLinkURL") {
         element<String?>("title")
@@ -76,6 +78,7 @@ object ShareLinkURLSerializer : KSerializer<ShareLinkURL> {
 }
 
 /** Serializer for [ShareFileURL]. */
+@OptIn(ExperimentalSerializationApi::class)
 object ShareFileURLSerializer : KSerializer<ShareFileURL> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ShareFileURL") {
         element<String?>("title")
@@ -125,6 +128,7 @@ object ShareFileURLSerializer : KSerializer<ShareFileURL> {
 }
 
 /** Serializer for [ShareGroup]. */
+@OptIn(ExperimentalSerializationApi::class)
 object ShareGroupSerializer : KSerializer<ShareGroup> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ShareGroup") {
         element<String>("type")
@@ -225,6 +229,7 @@ object ShareGroupSerializer : KSerializer<ShareGroup> {
 }
 
 /** Serializer for [ShareOptions]. */
+@OptIn(ExperimentalSerializationApi::class)
 object ShareOptionsSerializer : KSerializer<ShareOptions> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ShareOptions") {
         element<List<ShareGroup>>("shareGroups")

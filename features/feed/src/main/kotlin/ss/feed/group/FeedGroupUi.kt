@@ -30,26 +30,52 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.hilt.navigation.compose.hiltViewModel
 import app.ss.design.compose.extensions.haptics.LocalSsHapticFeedback
 import app.ss.design.compose.theme.SsTheme
 import app.ss.design.compose.widget.icon.IconBox
 import app.ss.design.compose.widget.icon.Icons
 import app.ss.design.compose.widget.scaffold.HazeScaffold
-import com.slack.circuit.codegen.annotations.CircuitInject
-import dagger.hilt.components.SingletonComponent
 import ss.feed.components.FeedLazyColum
 import ss.feed.components.view.FeedLoadingView
-import ss.feed.group.FeedGroupScreen.Event
-import ss.feed.group.FeedGroupScreen.State
+import ss.libraries.navigation3.LocalSsNavigator
+
+@Suppress("DEPRECATION")
+@Composable
+fun FeedGroupScreen(
+    modifier: Modifier = Modifier,
+    viewModel: FeedGroupViewModel = hiltViewModel(),
+) {
+    val navigator = LocalSsNavigator.current
+    LaunchedEffect(navigator) {
+        viewModel.setNavigator(navigator)
+    }
+
+    val uiState by viewModel.uiState.collectAsState()
+
+    FeedGroupContent(
+        state = uiState,
+        modifier = modifier,
+        onNavBack = viewModel::onNavBack,
+        onItemClick = viewModel::onItemClick,
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
-@CircuitInject(FeedGroupScreen::class, SingletonComponent::class)
 @Composable
-fun FeedGroupUi(state: State, modifier: Modifier = Modifier) {
+internal fun FeedGroupContent(
+    state: FeedGroupUiState,
+    modifier: Modifier = Modifier,
+    onNavBack: () -> Unit = {},
+    onItemClick: (String) -> Unit = {},
+) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val hapticFeedback = LocalSsHapticFeedback.current
 
@@ -62,7 +88,7 @@ fun FeedGroupUi(state: State, modifier: Modifier = Modifier) {
                 navigationIcon = {
                     IconButton(onClick = {
                         hapticFeedback.performClick()
-                        state.eventSink(Event.OnNavBack)
+                        onNavBack()
                     }) {
                         IconBox(Icons.ArrowBack)
                     }
@@ -77,20 +103,20 @@ fun FeedGroupUi(state: State, modifier: Modifier = Modifier) {
         blurTopBar = true,
     ) { contentPadding ->
         when (state) {
-            is State.Loading -> {
+            is FeedGroupUiState.Loading -> {
                 FeedLoadingView(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = contentPadding,
                 )
             }
 
-            is State.Success -> {
+            is FeedGroupUiState.Success -> {
                 FeedLazyColum(
                     resources = state.resources,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = contentPadding,
-                    itemClick = {
-                        state.eventSink(Event.OnItemClick(it))
+                    itemClick = { index ->
+                        onItemClick(index)
                         hapticFeedback.performScreenView()
                     }
                 )
@@ -104,8 +130,8 @@ fun FeedGroupUi(state: State, modifier: Modifier = Modifier) {
 private fun Preview() {
     SsTheme {
         Surface {
-            FeedGroupUi(
-                state = State.Loading(title = "Title", eventSink = {}),
+            FeedGroupContent(
+                state = FeedGroupUiState.Loading(title = "Title"),
                 modifier = Modifier
             )
         }

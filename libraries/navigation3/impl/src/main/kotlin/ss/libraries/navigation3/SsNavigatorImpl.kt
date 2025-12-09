@@ -23,7 +23,7 @@
 package ss.libraries.navigation3
 
 import androidx.activity.ComponentActivity
-import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import com.cryart.sabbathschool.core.extensions.context.launchWebUrl
 import com.cryart.sabbathschool.core.navigation.AppNavigator
@@ -33,7 +33,7 @@ import com.cryart.sabbathschool.core.navigation.AppNavigator
  * Handles special navigation cases like custom tabs and legacy destinations.
  */
 class SsNavigatorImpl(
-    private val backStack: SnapshotStateList<NavKey>,
+    private val backStack: NavBackStack<NavKey>,
     private val activity: ComponentActivity,
     private val appNavigator: AppNavigator,
 ) : SsNavigator {

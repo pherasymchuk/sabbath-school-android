@@ -31,7 +31,7 @@ import ss.libraries.navigation3.serializers.FeedTypeSerializer
 @Serializable
 data class FeedGroupKey(
     val id: String,
-    val title: String,
+    val title: String?,
     @Serializable(with = FeedTypeSerializer::class)
     val feedType: FeedType,
 ) : NavKey

@@ -28,25 +28,76 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.hilt.navigation.compose.hiltViewModel
 import app.ss.design.compose.extensions.haptics.LocalSsHapticFeedback
 import app.ss.design.compose.theme.SsTheme
 import app.ss.design.compose.widget.appbar.FeedTopAppBar
 import app.ss.design.compose.widget.scaffold.HazeScaffold
-import com.slack.circuit.codegen.annotations.CircuitInject
-import com.slack.circuit.overlay.OverlayEffect
-import dagger.hilt.components.SingletonComponent
+import io.adventech.blockkit.model.feed.FeedGroup
+import kotlinx.collections.immutable.persistentListOf
 import ss.feed.components.FeedLazyColum
 import ss.feed.components.view.FeedLoadingView
-import ss.libraries.circuit.navigation.FeedScreen
-import ss.services.auth.overlay.AccountDialogOverlay
+import ss.libraries.navigation3.LocalSsNavigator
+import ss.services.auth.overlay.AccountDialog
+
+@Suppress("DEPRECATION")
+@Composable
+fun FeedScreen(
+    modifier: Modifier = Modifier,
+    viewModel: FeedViewModel = hiltViewModel(),
+) {
+    val navigator = LocalSsNavigator.current
+    LaunchedEffect(navigator) {
+        viewModel.setNavigator(navigator)
+    }
+
+    val uiState by viewModel.uiState.collectAsState()
+    val overlayState by viewModel.overlayState.collectAsState()
+    val context = LocalContext.current
+
+    FeedScreenContent(
+        state = uiState,
+        modifier = modifier,
+        onProfileClick = viewModel::onProfileClick,
+        onFilterLanguagesClick = viewModel::onFilterLanguagesClick,
+        onItemClick = viewModel::onItemClick,
+        onSeeAllClick = viewModel::onSeeAllClick,
+    )
+
+    overlayState?.let { state ->
+        when (state) {
+            is FeedOverlayState.AccountInfo -> {
+                AccountDialog(
+                    userInfo = state.userInfo,
+                    onDismiss = viewModel::onOverlayDismiss,
+                    onSignOut = { viewModel.onOverlayResult(FeedViewModel.OverlayResult.SignOut, context) },
+                    onGoToSettings = { viewModel.onOverlayResult(FeedViewModel.OverlayResult.GoToSettings, context) },
+                    onShareApp = { viewModel.onOverlayResult(FeedViewModel.OverlayResult.ShareApp(context), context) },
+                    onGoToAbout = { viewModel.onOverlayResult(FeedViewModel.OverlayResult.GoToAbout, context) },
+                    onGoToPrivacyPolicy = { viewModel.onOverlayResult(FeedViewModel.OverlayResult.GoToPrivacyPolicy(context), context) },
+                )
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
-@CircuitInject(FeedScreen::class, SingletonComponent::class)
 @Composable
-fun FeedScreenUi(state: State, modifier: Modifier = Modifier) {
+internal fun FeedScreenContent(
+    state: FeedUiState,
+    modifier: Modifier = Modifier,
+    onProfileClick: () -> Unit = {},
+    onFilterLanguagesClick: () -> Unit = {},
+    onItemClick: (String) -> Unit = {},
+    onSeeAllClick: (FeedGroup) -> Unit = {},
+) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val listState = rememberLazyListState()
     val hapticFeedback = LocalSsHapticFeedback.current
@@ -58,54 +109,44 @@ fun FeedScreenUi(state: State, modifier: Modifier = Modifier) {
                 photoUrl = state.photoUrl,
                 title = state.title,
                 scrollBehavior = scrollBehavior,
-                onNavigationClick = { state.eventSink(Event.ProfileClick) },
-                onFilterLanguagesClick = { state.eventSink(Event.FilterLanguages) }
+                onNavigationClick = onProfileClick,
+                onFilterLanguagesClick = onFilterLanguagesClick,
             )
         },
         blurTopBar = true,
     ) { contentPadding ->
         when (state) {
-            is State.Loading -> {
+            is FeedUiState.Loading -> {
                 FeedLoadingView(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = contentPadding,
                 )
             }
 
-            is State.Group -> {
+            is FeedUiState.Group -> {
                 FeedLazyColum(
                     groups = state.groups,
                     modifier = Modifier,
                     state = listState,
                     contentPadding = contentPadding,
-                    seeAllClick = {
-                        state.eventSink(SuccessEvent.OnSeeAllClick(it))
+                    seeAllClick = { group ->
+                        onSeeAllClick(group)
                         hapticFeedback.performScreenView()
                     },
-                    itemClick = {
-                        state.eventSink(SuccessEvent.OnItemClick(it.index))
+                    itemClick = { resource ->
+                        onItemClick(resource.index)
                         hapticFeedback.performScreenView()
                     }
                 )
             }
 
-            is State.List -> {
+            is FeedUiState.ResourceList -> {
                 FeedLazyColum(
                     resources = state.resources,
                     modifier = Modifier,
                     state = listState,
                     contentPadding = contentPadding,
-                    itemClick = { state.eventSink(SuccessEvent.OnItemClick(it)) }
-                )
-            }
-        }
-    }
-
-    state.overlayState?.let { overlayState ->
-        OverlayEffect(overlayState) {
-            when (overlayState) {
-                is OverlayState.AccountInfo -> overlayState.onResult(
-                    show(AccountDialogOverlay(overlayState.userInfo))
+                    itemClick = { index -> onItemClick(index) }
                 )
             }
         }
@@ -115,5 +156,27 @@ fun FeedScreenUi(state: State, modifier: Modifier = Modifier) {
 @PreviewLightDark
 @Composable
 private fun LoadingPreview() {
-    SsTheme { Surface { FeedScreenUi(state = State.Loading("", null, null) {}) } }
+    SsTheme {
+        Surface {
+            FeedScreenContent(
+                state = FeedUiState.Loading("", null)
+            )
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun GroupPreview() {
+    SsTheme {
+        Surface {
+            FeedScreenContent(
+                state = FeedUiState.Group(
+                    photoUrl = null,
+                    title = "Sabbath School",
+                    groups = persistentListOf()
+                )
+            )
+        }
+    }
 }

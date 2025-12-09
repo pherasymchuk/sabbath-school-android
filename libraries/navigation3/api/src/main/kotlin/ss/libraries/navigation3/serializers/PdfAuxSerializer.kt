@@ -23,6 +23,7 @@
 package ss.libraries.navigation3.serializers
 
 import app.ss.models.PDFAux
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -35,6 +36,7 @@ import kotlinx.serialization.encoding.decodeStructure
 import kotlinx.serialization.encoding.encodeStructure
 
 /** Serializer for [PDFAux]. */
+@OptIn(ExperimentalSerializationApi::class)
 object PdfAuxSerializer : KSerializer<PDFAux> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("PDFAux") {
         element<String>("id")

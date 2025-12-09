@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024. Adventech <info@adventech.io>
+ * Copyright (c) 2025. Adventech <info@adventech.io>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,36 +20,14 @@
  * THE SOFTWARE.
  */
 
-plugins {
-    alias(libs.plugins.foundry.base)
-    alias(libs.plugins.ksp)
-    alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.parcelize)
-    alias(libs.plugins.hilt)
+package ss.libraries.navigation3
+
+import androidx.compose.runtime.compositionLocalOf
+
+/**
+ * CompositionLocal to provide the current [SsNavigator] to composables.
+ * This allows presenters and UI components to access navigation without explicit passing.
+ */
+val LocalSsNavigator = compositionLocalOf<SsNavigator> {
+    error("No SsNavigator provided. Make sure to wrap your content with SsNavHost.")
 }
-
-foundry {
-    features { compose() }
-}
-
-dependencies {
-    implementation(libs.androidx.hilt.navigation.compose)
-    implementation(libs.androidx.lifecycle.viewmodel)
-    implementation(libs.coil.compose)
-    implementation(libs.google.hilt.android)
-    implementation(libs.kotlinx.collectionsImmutable)
-    implementation(projects.common.auth)
-    implementation(projects.common.core)
-    implementation(projects.common.designCompose)
-    implementation(projects.common.translations)
-    implementation(projects.libraries.navigation3.api)
-    implementation(projects.libraries.navigation3.impl)
-    implementation(projects.services.auth.overlay)
-    implementation(projects.services.resources.api)
-
-    testImplementation(libs.bundles.testing.common)
-
-    ksp(libs.google.hilt.compiler)
-}
-

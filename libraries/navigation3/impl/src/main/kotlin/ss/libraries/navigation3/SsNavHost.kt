@@ -27,18 +27,22 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSerializable
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
-import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.runtime.serialization.NavBackStackSerializer
+import androidx.navigation3.runtime.serialization.NavKeySerializer
 import androidx.navigation3.ui.NavDisplay
 import com.cryart.sabbathschool.core.navigation.AppNavigator
 
 /**
- * Creates and remembers an [SsNavigator] instance.
+ * Creates and remembers an [SsNavigator] instance with a serializable back stack.
  *
  * @param startKey The initial navigation key to start with.
  * @param activity The component activity for handling special navigation.
@@ -51,7 +55,11 @@ fun rememberSsNavigator(
     activity: ComponentActivity,
     appNavigator: AppNavigator,
 ): SsNavigatorState {
-    val backStack = rememberNavBackStack(startKey)
+    val backStack = rememberSerializable(
+        serializer = NavBackStackSerializer(elementSerializer = NavKeySerializer())
+    ) {
+        NavBackStack(startKey)
+    }
     val navigator = remember(backStack, activity, appNavigator) {
         SsNavigatorImpl(backStack, activity, appNavigator)
     }
@@ -63,7 +71,7 @@ fun rememberSsNavigator(
  */
 data class SsNavigatorState(
     val navigator: SsNavigator,
-    val backStack: androidx.navigation3.runtime.NavBackStack<NavKey>,
+    val backStack: NavBackStack<NavKey>,
 )
 
 /**
@@ -79,28 +87,30 @@ fun SsNavHost(
     entryBuilders: Set<EntryProviderBuilder>,
     modifier: Modifier = Modifier,
 ) {
-    NavDisplay(
-        backStack = navigatorState.backStack,
-        onBack = { navigatorState.navigator.pop() },
-        modifier = modifier,
-        entryDecorators = listOf(
-            rememberSaveableStateHolderNavEntryDecorator(),
-            rememberViewModelStoreNavEntryDecorator(),
-        ),
-        transitionSpec = {
-            slideInHorizontally(initialOffsetX = { it }) togetherWith
-                slideOutHorizontally(targetOffsetX = { -it })
-        },
-        popTransitionSpec = {
-            slideInHorizontally(initialOffsetX = { -it }) togetherWith
-                slideOutHorizontally(targetOffsetX = { it })
-        },
-        predictivePopTransitionSpec = {
-            slideInHorizontally(initialOffsetX = { -it }) togetherWith
-                slideOutHorizontally(targetOffsetX = { it })
-        },
-        entryProvider = entryProvider {
-            entryBuilders.forEach { builder -> this.builder() }
-        },
-    )
+    CompositionLocalProvider(LocalSsNavigator provides navigatorState.navigator) {
+        NavDisplay(
+            backStack = navigatorState.backStack,
+            onBack = { navigatorState.navigator.pop() },
+            modifier = modifier,
+            entryDecorators = listOf(
+                rememberSaveableStateHolderNavEntryDecorator(),
+                rememberViewModelStoreNavEntryDecorator(),
+            ),
+            transitionSpec = {
+                slideInHorizontally(initialOffsetX = { it }) togetherWith
+                    slideOutHorizontally(targetOffsetX = { -it })
+            },
+            popTransitionSpec = {
+                slideInHorizontally(initialOffsetX = { -it }) togetherWith
+                    slideOutHorizontally(targetOffsetX = { it })
+            },
+            predictivePopTransitionSpec = {
+                slideInHorizontally(initialOffsetX = { -it }) togetherWith
+                    slideOutHorizontally(targetOffsetX = { it })
+            },
+            entryProvider = entryProvider {
+                entryBuilders.forEach { builder -> this.builder() }
+            },
+        )
+    }
 }
