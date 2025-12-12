@@ -86,6 +86,7 @@ internal fun DocumentScreenUi(
     readerStyleStateProducer: ReaderStyleStateProducer? = null,
     segmentOverlayStateProducer: SegmentOverlayStateProducer? = null,
     userInputStateProducer: UserInputStateProducer? = null,
+    miniPlayer: @Composable () -> Unit = { MiniPlayerScreen() },
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val hapticFeedback = LocalSsHapticFeedback.current
@@ -156,7 +157,7 @@ internal fun DocumentScreenUi(
         bottomBar = {
             val hidePlayer = (state as? State.Success)?.selectedSegment?.type == SegmentType.STORY && !collapsed
             if (!hidePlayer) {
-                MiniPlayerScreen()
+                miniPlayer()
             }
         },
         hazeStyle = HazeMaterials.regular(containerColor),
@@ -250,6 +251,7 @@ private fun DocumentScreenLoadingPreview() {
                     hasCover = false,
                     eventSink = {},
                 ),
+                miniPlayer = {},
             )
         }
     }
