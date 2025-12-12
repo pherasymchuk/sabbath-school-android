@@ -30,6 +30,15 @@ foundry {
     features { compose() }
 }
 
+kotlin {
+    compilerOptions {
+        optIn.addAll(
+            "androidx.compose.material3.ExperimentalMaterial3ExpressiveApi",
+            "androidx.compose.material3.ExperimentalMaterial3Api"
+        )
+    }
+}
+
 dependencies {
     implementation(libs.coil.compose)
     implementation(libs.kotlinx.collectionsImmutable)

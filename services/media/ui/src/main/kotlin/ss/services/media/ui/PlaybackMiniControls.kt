@@ -46,11 +46,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.HourglassBottom
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
@@ -141,37 +142,32 @@ fun PlaybackMiniControls(
         onDismiss = { cancel() },
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
-            Surface(
-                color = Color.Transparent,
-                shape = MaterialTheme.shapes.medium,
+            // Use M3 Expressive HorizontalFloatingToolbar for modern mini player look
+            HorizontalFloatingToolbar(
                 modifier = modifier
                     .padding(horizontal = Dimens.grid_5)
                     .padding(bottom = Dimens.grid_4)
                     .thenIf(isLargeScreen()) {
-                        requiredSizeIn(
-                            maxWidth = PlaybackMiniControlsDefaults.maxWidth
-                        )
+                        requiredSizeIn(maxWidth = PlaybackMiniControlsDefaults.maxWidth)
                     }
                     .align(Alignment.Center)
-                    .clickable { onExpand() }
+                    .clickable { onExpand() },
+                expanded = true,
             ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(playbackButtonSpacing()),
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .height(height)
                             .fillMaxWidth()
-                            .background(SsTheme.colors.playbackMiniBackground)
                     ) {
                         NowPlayingColumn(
                             spec = nowPlayingSpec,
                             onCancel = cancel
                         )
                         PlaybackReplay(
-                            contentColor = SsTheme.colors.playbackMiniContent,
+                            contentColor = MaterialTheme.colorScheme.onSurface,
                             onRewind = {
                                 playbackConnection.rewind()
                             }
@@ -179,7 +175,7 @@ fun PlaybackMiniControls(
 
                         PlaybackPlayPause(
                             spec = spec,
-                            contentColor = SsTheme.colors.playbackMiniContent,
+                            contentColor = MaterialTheme.colorScheme.onSurface,
                             onPlayPause = {
                                 playbackConnection.playPause()
                             }
@@ -189,7 +185,7 @@ fun PlaybackMiniControls(
                     }
                     PlaybackProgress(
                         spec = spec,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MaterialTheme.colorScheme.primary,
                         playbackConnection = playbackConnection
                     )
                 }
@@ -337,7 +333,8 @@ fun PlaybackPlayPause(
         interactionSource = interactionSource,
     ) {
         if (spec.isBuffering) {
-            CircularProgressIndicator(
+            // Use M3 Expressive LoadingIndicator
+            LoadingIndicator(
                 modifier = Modifier.size(iconSize),
                 color = contentColor,
             )
