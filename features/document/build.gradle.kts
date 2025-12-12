@@ -33,6 +33,15 @@ android {
     namespace = "ss.document"
 }
 
+kotlin {
+    compilerOptions {
+        optIn.addAll(
+            "androidx.compose.material3.ExperimentalMaterial3ExpressiveApi",
+            "androidx.compose.material3.ExperimentalMaterial3Api"
+        )
+    }
+}
+
 foundry {
     features { compose() }
 }

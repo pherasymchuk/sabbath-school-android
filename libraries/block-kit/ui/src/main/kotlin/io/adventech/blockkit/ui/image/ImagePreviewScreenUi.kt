@@ -37,13 +37,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowCircleDown
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -183,7 +183,8 @@ internal fun ImagePreviewScreenContent(
             modifier = Modifier
                 .safeDrawingPadding()
                 .displayCutoutPadding()
-                .align(Alignment.TopCenter)
+                .align(Alignment.TopStart)
+                .padding(16.dp)
                 .zIndex(2f),
         )
 
@@ -203,35 +204,28 @@ private fun TopRowActions(
     onDownload: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    TopAppBar(
-        title = {},
+    HorizontalFloatingToolbar(
         modifier = modifier,
-        navigationIcon = {
-            IconButton(
-                onClick = onBack,
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Close,
-                    contentDescription = stringResource(L10nR.string.ss_action_back),
-                )
-            }
-        },
-        actions = {
-            IconButton(
-                onClick = onDownload,
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.ArrowCircleDown,
-                    contentDescription = stringResource(L10nR.string.ss_action_download),
-                )
-            }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = Color.Transparent,
-            navigationIconContentColor = Color.White,
-            actionIconContentColor = Color.White
-        )
-    )
+        expanded = true,
+    ) {
+        IconButton(
+            onClick = onBack,
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.Close,
+                contentDescription = stringResource(L10nR.string.ss_action_back),
+            )
+        }
+
+        IconButton(
+            onClick = onDownload,
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.ArrowCircleDown,
+                contentDescription = stringResource(L10nR.string.ss_action_download),
+            )
+        }
+    }
 }
 
 @Composable
