@@ -33,6 +33,15 @@ foundry {
     features { compose() }
 }
 
+kotlin {
+    compilerOptions {
+        optIn.addAll(
+            "androidx.compose.material3.ExperimentalMaterial3ExpressiveApi",
+            "androidx.compose.material3.ExperimentalMaterial3Api"
+        )
+    }
+}
+
 android {
     namespace = "ss.navigation.suite"
     androidResources.enable = true

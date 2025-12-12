@@ -32,8 +32,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -157,7 +157,7 @@ private fun BoxScope.Controls(
             contentAlignment = Alignment.Center
         ) {
             if (playbackState.isBuffering) {
-                CircularProgressIndicator(color = contentColor)
+                LoadingIndicator(color = contentColor)
             } else {
                 IconButton(
                     onClick = { mediaPlayer.playPause() },

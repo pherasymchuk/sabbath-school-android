@@ -31,8 +31,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -173,7 +173,7 @@ private fun ShareOptionsContent(
             colors = buttonColors,
         ) {
             if (state.shareButtonState == ShareButtonState.LOADING) {
-                CircularProgressIndicator(Modifier.size(32.dp))
+                LoadingIndicator(Modifier.size(32.dp))
             } else {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     IconBox(
