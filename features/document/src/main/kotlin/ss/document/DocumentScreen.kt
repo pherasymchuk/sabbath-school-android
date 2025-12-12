@@ -177,5 +177,11 @@ fun DocumentScreen(
         )
     }
 
-    DocumentScreenUi(state = state, modifier = modifier)
+    DocumentScreenUi(
+        state = state,
+        modifier = modifier,
+        readerStyleStateProducer = readerStyleStateProducer,
+        segmentOverlayStateProducer = segmentOverlayStateProducer,
+        userInputStateProducer = userInputStateProducer,
+    )
 }

@@ -157,10 +157,7 @@ internal fun PreferenceItem(
         if (item is PrefListEntity.Switch) {
             Switch(
                 checked = item.checked,
-                onCheckedChange = {
-                    hapticFeedback.performToggleSwitch(it)
-                    item.onCheckChanged(it)
-                },
+                onCheckedChange = null,
                 enabled = item.enabled
             )
         }

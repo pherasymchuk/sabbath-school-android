@@ -30,9 +30,12 @@ import dagger.multibindings.IntoSet
 import ss.document.producer.ReaderStyleStateProducer
 import ss.document.producer.TopAppbarActionsProducer
 import ss.document.producer.UserInputStateProducer
+import ss.document.segment.hidden.HiddenSegmentScreen
 import ss.document.segment.producer.SegmentOverlayStateProducer
 import ss.libraries.navigation3.DocumentKey
 import ss.libraries.navigation3.EntryProviderBuilder
+import ss.libraries.navigation3.HiddenSegmentKey
+import ss.libraries.navigation3.LocalSsNavigator
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -51,6 +54,27 @@ object DocumentNavModule {
                 index = key.index,
                 segmentIndex = key.segmentIndex,
                 actionsProducer = actionsProducer,
+                readerStyleStateProducer = readerStyleStateProducer,
+                segmentOverlayStateProducer = segmentOverlayStateProducer,
+                userInputStateProducer = userInputStateProducer,
+            )
+        }
+    }
+
+    @Provides
+    @IntoSet
+    fun provideHiddenSegmentEntry(
+        readerStyleStateProducer: ReaderStyleStateProducer,
+        segmentOverlayStateProducer: SegmentOverlayStateProducer,
+        userInputStateProducer: UserInputStateProducer,
+    ): EntryProviderBuilder = {
+        entry<HiddenSegmentKey> { key ->
+            val navigator = LocalSsNavigator.current
+            HiddenSegmentScreen(
+                id = key.id,
+                index = key.index,
+                documentIndex = key.documentIndex,
+                navigator = navigator,
                 readerStyleStateProducer = readerStyleStateProducer,
                 segmentOverlayStateProducer = segmentOverlayStateProducer,
                 userInputStateProducer = userInputStateProducer,

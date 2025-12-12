@@ -48,6 +48,7 @@ dependencies {
     implementation(projects.common.misc)
     implementation(projects.common.translations)
     implementation(projects.features.media)
+    implementation(projects.features.share)
     implementation(projects.libraries.blockKit.ui)
     implementation(projects.libraries.foundation.android)
     implementation(projects.libraries.media.api)

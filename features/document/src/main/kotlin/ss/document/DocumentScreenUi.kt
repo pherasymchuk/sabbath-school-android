@@ -43,16 +43,15 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.keepScreenOn
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
 import app.ss.design.compose.extensions.haptics.LocalSsHapticFeedback
 import app.ss.design.compose.theme.SsTheme
 import app.ss.design.compose.widget.scaffold.HazeScaffold
@@ -68,21 +67,36 @@ import io.adventech.blockkit.ui.style.background
 import io.adventech.blockkit.ui.style.font.LocalFontFamilyProvider
 import io.adventech.blockkit.ui.style.primaryForeground
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.coroutines.launch
 import ss.document.components.DocumentLoadingView
 import ss.document.components.DocumentPager
 import ss.document.components.DocumentTitleBar
 import ss.document.components.DocumentTopAppBar
 import ss.document.segment.components.overlay.BlocksOverlayContent
 import ss.document.segment.components.overlay.ExcerptOverlayContent
+import ss.document.segment.hidden.HiddenSegmentScreen
+import app.ss.media.playback.ui.nowPlaying.AudioPlayerScreen
 import app.ss.media.playback.ui.nowPlaying.mini.MiniPlayerScreen
+import app.ss.media.playback.ui.video.VideosScreen
+import ss.document.producer.ReaderStyleStateProducer
+import ss.document.producer.UserInputStateProducer
+import ss.document.segment.producer.SegmentOverlayStateProducer
+import ss.libraries.navigation3.AudioPlayerKey
 import ss.libraries.navigation3.HiddenSegmentKey
 import ss.libraries.navigation3.LocalSsNavigator
 import ss.libraries.navigation3.ReaderOptionsKey
+import ss.libraries.navigation3.ShareOptionsKey
+import ss.libraries.navigation3.VideosKey
+import ss.share.options.ShareOptionsScreen
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalHazeMaterialsApi::class)
 @Composable
-internal fun DocumentScreenUi(state: State, modifier: Modifier = Modifier) {
+internal fun DocumentScreenUi(
+    state: State,
+    modifier: Modifier = Modifier,
+    readerStyleStateProducer: ReaderStyleStateProducer? = null,
+    segmentOverlayStateProducer: SegmentOverlayStateProducer? = null,
+    userInputStateProducer: UserInputStateProducer? = null,
+) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val hapticFeedback = LocalSsHapticFeedback.current
     val context = LocalContext.current
@@ -190,7 +204,20 @@ internal fun DocumentScreenUi(state: State, modifier: Modifier = Modifier) {
                     )
                 }
 
-                DocumentOverlay(state.overlayState, state.readerStyle)
+                if (readerStyleStateProducer != null && segmentOverlayStateProducer != null && userInputStateProducer != null) {
+                    DocumentOverlay(
+                        documentOverlayState = state.overlayState,
+                        readerStyle = state.readerStyle,
+                        readerStyleStateProducer = readerStyleStateProducer,
+                        segmentOverlayStateProducer = segmentOverlayStateProducer,
+                        userInputStateProducer = userInputStateProducer,
+                    )
+                } else {
+                    DocumentOverlaySimple(
+                        documentOverlayState = state.overlayState,
+                        readerStyle = state.readerStyle,
+                    )
+                }
             }
         }
     }
@@ -204,12 +231,14 @@ internal fun DocumentScreenUi(state: State, modifier: Modifier = Modifier) {
 internal fun DocumentOverlay(
     documentOverlayState: DocumentOverlayState?,
     readerStyle: ReaderStyleConfig,
+    readerStyleStateProducer: ReaderStyleStateProducer,
+    segmentOverlayStateProducer: SegmentOverlayStateProducer,
+    userInputStateProducer: UserInputStateProducer,
 ) {
     val hapticFeedback = LocalSsHapticFeedback.current
     val containerColor = readerStyle.theme.background()
     val contentColor = readerStyle.theme.primaryForeground()
     val navigator = LocalSsNavigator.current
-    val scope = rememberCoroutineScope()
 
     when (val overlayState = documentOverlayState) {
         is DocumentOverlayState.BottomSheet -> {
@@ -220,25 +249,136 @@ internal fun DocumentOverlay(
             ModalBottomSheet(
                 onDismissRequest = overlayState.onDismiss,
                 sheetState = sheetState,
-                containerColor = if (overlayState.themed) containerColor else Color.Unspecified,
-                contentColor = if (overlayState.themed) contentColor else Color.Unspecified,
+                containerColor = if (overlayState.themed) containerColor else SsTheme.colors.primaryBackground,
+                contentColor = if (overlayState.themed) contentColor else SsTheme.colors.primaryForeground,
             ) {
-                // Navigate to the key content using the navigator
                 LaunchedEffect(overlayState.key) {
                     if (overlayState.feedback) {
                         hapticFeedback.performScreenView()
                     }
                 }
-                // For bottom sheet content, we need to render based on the key type
-                when (overlayState.key) {
+                // Render the appropriate content based on the key type
+                when (val key = overlayState.key) {
                     is ReaderOptionsKey -> {
                         ss.document.reader.ReaderOptionsScreen()
                     }
+                    is AudioPlayerKey -> {
+                        AudioPlayerScreen(
+                            resourceId = key.resourceId,
+                            segmentId = key.segmentId,
+                        )
+                    }
+                    is VideosKey -> {
+                        VideosScreen(
+                            documentIndex = key.documentIndex,
+                            documentId = key.documentId,
+                        )
+                    }
+                    is ShareOptionsKey -> {
+                        ShareOptionsScreen(
+                            options = key.options,
+                            title = key.title,
+                            resourceColor = key.resourceColor,
+                        )
+                    }
+                    is HiddenSegmentKey -> {
+                        HiddenSegmentScreen(
+                            id = key.id,
+                            index = key.index,
+                            documentIndex = key.documentIndex,
+                            navigator = navigator,
+                            readerStyleStateProducer = readerStyleStateProducer,
+                            segmentOverlayStateProducer = segmentOverlayStateProducer,
+                            userInputStateProducer = userInputStateProducer,
+                        )
+                    }
                     else -> {
-                        // Handle other key types or navigate
-                        navigator.goTo(overlayState.key)
-                        scope.launch {
-                            sheetState.hide()
+                        // For unknown keys, just dismiss
+                        LaunchedEffect(key) {
+                            overlayState.onDismiss()
+                        }
+                    }
+                }
+            }
+        }
+
+        is DocumentOverlayState.Segment.Blocks -> {
+            BlocksOverlayContent(
+                state = overlayState.state,
+                onDismiss = overlayState.onDismiss,
+            )
+        }
+
+        is DocumentOverlayState.Segment.Excerpt -> {
+            ExcerptOverlayContent(
+                state = overlayState.state,
+                onDismiss = overlayState.onDismiss,
+            )
+        }
+
+        is DocumentOverlayState.Segment.None -> Unit
+        null -> Unit
+    }
+}
+
+/**
+ * Simplified overlay that handles all key types except HiddenSegmentKey.
+ * Used when producers are not available.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun DocumentOverlaySimple(
+    documentOverlayState: DocumentOverlayState?,
+    readerStyle: ReaderStyleConfig,
+) {
+    val hapticFeedback = LocalSsHapticFeedback.current
+    val containerColor = readerStyle.theme.background()
+    val contentColor = readerStyle.theme.primaryForeground()
+    val navigator = LocalSsNavigator.current
+
+    when (val overlayState = documentOverlayState) {
+        is DocumentOverlayState.BottomSheet -> {
+            val sheetState = rememberModalBottomSheetState(
+                skipPartiallyExpanded = overlayState.skipPartiallyExpanded
+            )
+
+            ModalBottomSheet(
+                onDismissRequest = overlayState.onDismiss,
+                sheetState = sheetState,
+                containerColor = if (overlayState.themed) containerColor else SsTheme.colors.primaryBackground,
+                contentColor = if (overlayState.themed) contentColor else SsTheme.colors.primaryForeground,
+            ) {
+                LaunchedEffect(overlayState.key) {
+                    if (overlayState.feedback) {
+                        hapticFeedback.performScreenView()
+                    }
+                }
+                when (val key = overlayState.key) {
+                    is ReaderOptionsKey -> {
+                        ss.document.reader.ReaderOptionsScreen()
+                    }
+                    is AudioPlayerKey -> {
+                        AudioPlayerScreen(
+                            resourceId = key.resourceId,
+                            segmentId = key.segmentId,
+                        )
+                    }
+                    is VideosKey -> {
+                        VideosScreen(
+                            documentIndex = key.documentIndex,
+                            documentId = key.documentId,
+                        )
+                    }
+                    is ShareOptionsKey -> {
+                        ShareOptionsScreen(
+                            options = key.options,
+                            title = key.title,
+                            resourceColor = key.resourceColor,
+                        )
+                    }
+                    else -> {
+                        // For unknown keys (including HiddenSegmentKey without producers), just dismiss
+                        LaunchedEffect(key) {
                             overlayState.onDismiss()
                         }
                     }

@@ -123,28 +123,39 @@ internal class PdfReaderImpl @Inject constructor(
         context: Context,
         pdf: PDFAux
     ): LocalFile? = suspendCoroutine { continuation ->
-        val outputFile = File(context.getDir(FILE_DIRECTORY, Context.MODE_PRIVATE), "${pdf.id}.pdf")
+        val outputDir = context.getDir(FILE_DIRECTORY, Context.MODE_PRIVATE)
+        // Ensure the directory exists and is writable
+        if (!outputDir.exists()) {
+            outputDir.mkdirs()
+        }
+        val outputFile = File(outputDir, "${pdf.id}.pdf")
         if (outputFile.exists()) {
             continuation.resume(LocalFile(pdf.title, Uri.fromFile(outputFile)))
             return@suspendCoroutine
         }
 
-        val request: DownloadRequest = DownloadRequest.Builder(context)
-            .uri(pdf.src)
-            .outputFile(outputFile)
-            .build()
+        try {
+            val request: DownloadRequest = DownloadRequest.Builder(context)
+                .uri(pdf.src)
+                .outputFile(outputFile)
+                .overwriteExisting(true)
+                .build()
 
-        val downloadJob = DownloadJob.startDownload(request)
-        downloadJob?.setProgressListener(object : DownloadJob.ProgressListenerAdapter() {
-            override fun onComplete(output: File) {
-                continuation.resume(LocalFile(pdf.title, Uri.fromFile(output)))
-            }
+            val downloadJob = DownloadJob.startDownload(request)
+            downloadJob?.setProgressListener(object : DownloadJob.ProgressListenerAdapter() {
+                override fun onComplete(output: File) {
+                    continuation.resume(LocalFile(pdf.title, Uri.fromFile(output)))
+                }
 
-            override fun onError(exception: Throwable) {
-                Timber.e(exception)
-                continuation.resume(null)
-            }
-        })
+                override fun onError(exception: Throwable) {
+                    Timber.e(exception, "Failed to download PDF: ${pdf.src} to ${outputFile.absolutePath}")
+                    continuation.resume(null)
+                }
+            })
+        } catch (ex: Exception) {
+            Timber.e(ex, "Error setting up PDF download")
+            continuation.resume(null)
+        }
     }
 
     companion object {

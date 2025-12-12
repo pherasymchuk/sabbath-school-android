@@ -29,7 +29,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import app.ss.models.PDFAux
 import dagger.Lazy
@@ -104,7 +103,7 @@ internal class TopAppbarActionsProducerImpl @Inject constructor(
         segment: Segment?,
         shareOptions: ShareOptions?,
     ): TopAppbarActionsState {
-        var bottomSheetState by rememberSaveable { mutableStateOf<DocumentOverlayState?>(null) }
+        var bottomSheetState by remember { mutableStateOf<DocumentOverlayState?>(null) }
 
         val audio by produceState(emptyList()) {
             value = repository.audio(resourceIndex, documentIndex).getOrNull().orEmpty()
