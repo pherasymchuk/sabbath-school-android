@@ -54,6 +54,7 @@ import app.ss.design.compose.extensions.haptics.LocalSsHapticFeedback
 import app.ss.design.compose.theme.SsTheme
 import app.ss.design.compose.widget.scaffold.HazeScaffold
 import app.ss.design.compose.widget.scaffold.SystemUiEffect
+import androidx.compose.foundation.layout.Box
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.materials.HazeMaterials
 import io.adventech.blockkit.model.resource.SegmentType
@@ -67,6 +68,7 @@ import io.adventech.blockkit.ui.style.primaryForeground
 import kotlinx.collections.immutable.persistentListOf
 import androidx.compose.material3.Surface
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import ss.document.components.DocumentActionsFabMenu
 import ss.document.components.DocumentLoadingView
 import ss.document.components.DocumentOverlay
 import ss.document.components.DocumentOverlaySimple
@@ -162,6 +164,17 @@ internal fun DocumentScreenUi(
         },
         hazeStyle = HazeMaterials.regular(containerColor),
         blurTopBar = !state.hasCover || collapsed,
+        floatingActionButton = {
+            (state as? State.Success)?.let { successState ->
+                DocumentActionsFabMenu(
+                    actions = successState.actions,
+                    onActionClick = { action ->
+                        hapticFeedback.performClick()
+                        state.eventSink(Event.OnActionClick(action, context))
+                    }
+                )
+            }
+        },
     ) { contentPadding ->
         when (state) {
             is State.Loading -> {

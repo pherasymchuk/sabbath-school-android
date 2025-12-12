@@ -35,14 +35,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -67,19 +64,16 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import app.ss.design.compose.extensions.haptics.LocalSsHapticFeedback
 import app.ss.design.compose.theme.SsTheme
 import app.ss.design.compose.widget.icon.IconBox
 import app.ss.design.compose.widget.icon.IconButtonResSlot
-import app.ss.design.compose.widget.icon.IconButtonSlot
 import app.ss.design.compose.widget.icon.Icons
 import io.adventech.blockkit.model.resource.Segment
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import ss.misc.DateHelper
-import androidx.compose.material.icons.Icons as MaterialIcons
 import androidx.compose.material3.Surface
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import app.ss.translations.R as L10nR
@@ -131,47 +125,8 @@ internal fun DocumentTopAppBar(
     onNavBack: () -> Unit = {},
     onActionClick: (DocumentTopAppBarAction) -> Unit = {},
 ) {
-    val hapticFeedback = LocalSsHapticFeedback.current
-    var expanded by remember { mutableStateOf(false) }
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentSize(Alignment.TopEnd),
-    ) {
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier,
-            offset = DpOffset((-16).dp, 0.dp),
-            shape = RoundedCornerShape(16.dp),
-            containerColor = SsTheme.colors.primaryBackground,
-        ) {
-            actions.filter { !it.primary }.forEach { action ->
-                DropdownMenuItem(
-                    text = {
-                        Text(
-                            text = stringResource(action.title),
-                            modifier = Modifier,
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                    },
-                    onClick = {
-                        expanded = false
-                        onActionClick(action)
-                    },
-                    modifier = Modifier,
-                    leadingIcon = {
-                        Icon(
-                            painter = painterResource(action.iconRes),
-                            contentDescription = stringResource(action.title),
-                            modifier = Modifier,
-                            tint = SsTheme.colors.primaryForeground
-                        )
-                    }
-                )
-            }
-        }
-    }
+    // Only show primary actions in the top bar - secondary actions are in FAB menu
+    val primaryActions = remember(actions) { actions.filter { it.primary } }
 
     TopAppBar(
         title = {
@@ -220,38 +175,16 @@ internal fun DocumentTopAppBar(
             }
         },
         actions = {
-            buildList {
-                actions.filter { it.primary }.forEach { action ->
-                    add(
-                        IconButtonResSlot(
+            // Only show primary actions directly - secondary actions moved to FAB menu
+            primaryActions.forEach { action ->
+                val iconColor by topAppBarContentColor(collapsible, collapsed, contentColor)
+                IconButton(onClick = { onActionClick(action) }) {
+                    IconBox(
+                        icon = IconButtonResSlot(
                             iconRes = action.iconRes,
                             contentDescription = stringResource(action.title),
-                            onClick = { onActionClick(action) },
-                        )
-                    )
-                }
-                if (actions.any { !it.primary }) {
-                    add(
-                        IconButtonSlot(
-                            imageVector = MaterialIcons.Rounded.MoreVert,
-                            contentDescription = stringResource(L10nR.string.ss_more),
-                            onClick = {
-                                expanded = true
-                                hapticFeedback.performClick()
-                            },
-                        )
-                    )
-                }
-            }.forEach { icon ->
-                val iconColor by topAppBarContentColor(collapsible, collapsed, contentColor)
-                val onClick = (icon as? IconButtonSlot)?.onClick ?: (icon as? IconButtonResSlot)?.onClick
-                IconButton(
-                    onClick = {
-                        onClick?.invoke()
-                    },
-                ) {
-                    IconBox(
-                        icon = icon,
+                            onClick = {},
+                        ),
                         contentColor = iconColor,
                     )
                 }
