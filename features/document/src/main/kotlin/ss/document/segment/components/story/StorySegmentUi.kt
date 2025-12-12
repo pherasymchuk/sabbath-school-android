@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,7 +39,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import app.ss.design.compose.extensions.haptics.LocalSsHapticFeedback
+import app.ss.design.compose.theme.SsTheme
 import app.ss.design.compose.widget.icon.IconBox
 import app.ss.design.compose.widget.icon.Icons
 import io.adventech.blockkit.model.BlockData
@@ -80,6 +83,36 @@ fun StorySegmentUi(
                         hapticFeedback.performClick()
                         onNavBack()
                     },
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = Color.Transparent,
+                    )
+                ) {
+                    IconBox(
+                        icon = Icons.ArrowBack,
+                        contentColor = Color.White
+                    )
+                }
+            }
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun StorySegmentPreview() {
+    SsTheme {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = Color.DarkGray
+        ) {
+            // Story segment requires BlockItem.Story which is complex to mock
+            // This preview shows the collapsed state with back button
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.TopStart,
+            ) {
+                IconButton(
+                    onClick = {},
                     colors = IconButtonDefaults.iconButtonColors(
                         containerColor = Color.Transparent,
                     )

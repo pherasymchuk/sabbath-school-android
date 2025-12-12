@@ -65,6 +65,8 @@ import io.adventech.blockkit.ui.style.background
 import io.adventech.blockkit.ui.style.font.LocalFontFamilyProvider
 import io.adventech.blockkit.ui.style.primaryForeground
 import kotlinx.collections.immutable.persistentListOf
+import androidx.compose.material3.Surface
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import ss.document.components.DocumentLoadingView
 import ss.document.components.DocumentOverlay
 import ss.document.components.DocumentOverlaySimple
@@ -236,4 +238,19 @@ private fun State.containerColor(): Color = when (this) {
 private fun State.contentColor(): Color = when (this) {
     is State.Loading -> SsTheme.colors.primaryForeground
     is State.Success -> readerStyle.theme.primaryForeground()
+}
+
+@PreviewLightDark
+@Composable
+private fun DocumentScreenLoadingPreview() {
+    SsTheme {
+        Surface {
+            DocumentScreenUi(
+                state = State.Loading(
+                    hasCover = false,
+                    eventSink = {},
+                ),
+            )
+        }
+    }
 }

@@ -23,12 +23,17 @@
 package app.ss.media.playback.ui.nowPlaying.mini
 
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.hilt.navigation.compose.hiltViewModel
+import app.ss.design.compose.theme.SsTheme
 import ss.libraries.navigation3.LocalSsNavigator
 import ss.services.media.ui.PlaybackMiniControls
+import ss.services.media.ui.spec.NowPlayingSpec
+import ss.services.media.ui.spec.PlaybackStateSpec
 
 /**
  * Mini audio player screen composable.
@@ -57,4 +62,49 @@ fun MiniPlayerScreen(
     ) {
         viewModel.onExpand()
     }
+}
+
+@PreviewLightDark
+@Composable
+private fun MiniPlayerPreview() {
+    SsTheme {
+        Surface {
+            PlaybackMiniControls(
+                spec = PlaybackStateSpec(
+                    isPlaying = true,
+                    isPlayEnabled = true,
+                    isError = false,
+                    isBuffering = false,
+                    canShowMini = true,
+                ),
+                nowPlayingSpec = NowPlayingSpec(
+                    id = "1",
+                    title = "Sabbath Rest",
+                    artist = "Adult Sabbath School",
+                ),
+                playbackConnection = NoOpPlaybackConnection,
+                onExpand = {},
+            )
+        }
+    }
+}
+
+private object NoOpPlaybackConnection : ss.services.media.ui.PlaybackConnection {
+    override val isConnected = kotlinx.coroutines.flow.MutableStateFlow(false)
+    override val playbackState = kotlinx.coroutines.flow.MutableStateFlow(PlaybackStateSpec.NONE)
+    override val nowPlaying = kotlinx.coroutines.flow.MutableStateFlow(androidx.media3.common.MediaMetadata.EMPTY)
+    override val playbackQueue = kotlinx.coroutines.flow.MutableStateFlow(ss.libraries.media.model.PlaybackQueue())
+    override val playbackProgress = kotlinx.coroutines.flow.MutableStateFlow(ss.libraries.media.model.PlaybackProgressState())
+    override val playbackSpeed = kotlinx.coroutines.flow.MutableStateFlow(ss.libraries.media.model.PlaybackSpeed.NORMAL)
+    override fun playPause() = Unit
+    override fun playAudio(audio: app.ss.models.media.AudioFile) = Unit
+    override fun playAudios(audios: List<app.ss.models.media.AudioFile>, index: Int) = Unit
+    override fun toggleSpeed() = Unit
+    override fun setQueue(audios: List<app.ss.models.media.AudioFile>, index: Int) = Unit
+    override fun skipToItem(position: Int) = Unit
+    override fun seekTo(progress: Long) = Unit
+    override fun rewind() = Unit
+    override fun fastForward() = Unit
+    override fun stop() = Unit
+    override fun releaseMini() = Unit
 }

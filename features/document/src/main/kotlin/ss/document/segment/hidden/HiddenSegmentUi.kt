@@ -46,9 +46,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import app.ss.design.compose.extensions.modifier.asPlaceholder
 import app.ss.design.compose.extensions.window.containerWidth
+import app.ss.design.compose.theme.SsTheme
 import io.adventech.blockkit.ui.BlockContent
 import io.adventech.blockkit.ui.input.UserInputState
 import io.adventech.blockkit.ui.style.LocalBlocksStyle
@@ -233,6 +235,24 @@ private fun HiddenSegmentScaffold(
             ),
             verticalArrangement = Arrangement.spacedBy(20.dp),
             content = content,
+        )
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun HiddenSegmentLoadingPreview() {
+    SsTheme {
+        HiddenSegmentContent(
+            state = HiddenSegmentState.Loading(),
+            readerStyle = ReaderStyleConfig(),
+            overlayState = null,
+            userInputState = io.adventech.blockkit.ui.input.UserInputState(
+                input = kotlinx.collections.immutable.persistentListOf(),
+                bibleVersion = null,
+                collapseContent = kotlinx.collections.immutable.persistentMapOf(),
+                eventSink = {}
+            ),
         )
     }
 }

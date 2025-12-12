@@ -41,12 +41,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.ss.design.compose.extensions.haptics.LocalSsHapticFeedback
 import app.ss.design.compose.theme.Dimens
+import app.ss.design.compose.theme.SsTheme
 import app.ss.design.compose.widget.scaffold.HazeScaffold
 import io.adventech.blockkit.model.BlockItem
 import io.adventech.blockkit.ui.BlockContent
@@ -207,5 +209,23 @@ internal fun VideoSegmentScreenUi(
         ) {
             ss.document.reader.ReaderOptionsScreen()
         }
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun VideoSegmentScreenPreview() {
+    SsTheme {
+        VideoSegmentScreenUi(
+            state = VideoSegmentState(
+                title = "Video Lesson",
+            ),
+            userInputState = UserInputState(
+                input = persistentListOf(),
+                bibleVersion = null,
+                collapseContent = persistentMapOf(),
+                eventSink = {}
+            ),
+        )
     }
 }

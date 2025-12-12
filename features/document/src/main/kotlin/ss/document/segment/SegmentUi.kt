@@ -24,9 +24,13 @@ package ss.document.segment
 
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.PreviewLightDark
+import app.ss.design.compose.theme.SsTheme
 import app.ss.models.PDFAux
 import io.adventech.blockkit.model.BlockData
 import io.adventech.blockkit.model.BlockItem
@@ -109,6 +113,21 @@ fun SegmentUi(
                     onNavEvent = onNavEvent,
                 )
             }
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun SegmentUiPreview() {
+    SsTheme {
+        Surface {
+            // SegmentUi requires a full Segment model which is complex
+            // This preview shows a placeholder for UNKNOWN type
+            Text(
+                text = "Segment Preview",
+                modifier = Modifier,
+            )
         }
     }
 }

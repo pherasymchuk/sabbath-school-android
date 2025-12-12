@@ -23,13 +23,16 @@
 package app.ss.media.playback.ui.video
 
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.ss.design.compose.theme.SsTheme
 import ss.libraries.navigation3.LocalSsNavigator
 
 /**
@@ -64,4 +67,17 @@ fun VideosScreen(
         modifier = modifier.fillMaxSize(),
         onVideoClick = { viewModel.onVideoSelected(context, it) },
     )
+}
+
+@PreviewLightDark
+@Composable
+private fun VideosScreenPreview() {
+    SsTheme {
+        Surface {
+            VideoListScreen(
+                videoList = VideoListData.Empty,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+    }
 }

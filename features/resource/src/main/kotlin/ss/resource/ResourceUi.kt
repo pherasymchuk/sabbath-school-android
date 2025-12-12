@@ -45,6 +45,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.ss.design.compose.extensions.color.parse
 import app.ss.design.compose.extensions.haptics.LocalSsHapticFeedback
 import app.ss.design.compose.theme.SsTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import app.ss.design.compose.widget.scaffold.HazeScaffold
 import app.ss.design.compose.widget.scaffold.SystemUiEffect
 import io.adventech.blockkit.model.resource.ProgressTracking
@@ -199,4 +202,16 @@ fun ResourceScreen(
     }
 
     SystemUiEffect(lightStatusBar)
+}
+
+@PreviewLightDark
+@Composable
+private fun ResourceScreenPreview() {
+    SsTheme {
+        Surface {
+            // ResourceScreen requires complex dependencies (ViewModel, producers)
+            // This preview shows a loading state placeholder
+            ss.resource.components.ResourceLoadingView()
+        }
+    }
 }

@@ -56,6 +56,11 @@ import ss.settings.SettingsViewModel
 import ss.settings.ui.dialogs.ConfirmDeleteAccountDialog
 import ss.settings.ui.dialogs.ConfirmRemoveDownloadsDialog
 import ss.settings.ui.dialogs.ReminderTimePickerDialog
+import androidx.compose.material3.Surface
+import androidx.compose.ui.tooling.preview.PreviewLightDark
+import app.ss.design.compose.extensions.list.ListEntity
+import app.ss.design.compose.theme.SsTheme
+import kotlinx.collections.immutable.persistentListOf
 import app.ss.translations.R as L10nR
 
 @Suppress("DEPRECATION")
@@ -171,6 +176,19 @@ private fun SettingsContent(
     LaunchedEffect(overlay) {
         if (overlay != null) {
             hapticFeedback.performScreenView()
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun SettingsContentPreview() {
+    SsTheme {
+        Surface {
+            SettingsContent(
+                entities = persistentListOf(),
+                overlay = null,
+            )
         }
     }
 }
