@@ -33,6 +33,8 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeContent
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -80,7 +82,7 @@ import ss.document.producer.ReaderStyleStateProducer
 import ss.document.producer.UserInputStateProducer
 import ss.document.segment.producer.SegmentOverlayStateProducer
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalHazeMaterialsApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalHazeMaterialsApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun DocumentScreenUi(
     state: State,
@@ -116,16 +118,22 @@ internal fun DocumentScreenUi(
             .nestedScroll(scrollBehavior.nestedScrollConnection)
             .keepScreenOn(),
         topBar = {
+            // Use MotionScheme spring specs for physics-based animation
+            val motionScheme = MaterialTheme.motionScheme
             AnimatedVisibility(
                 visible = state.showTopBar(collapsed),
-                enter = slideInVertically {
+                enter = slideInVertically(
+                    animationSpec = motionScheme.defaultSpatialSpec()
+                ) {
                     with(density) { -(topPadding + 40.dp).roundToPx() }
                 } + expandVertically(
+                    animationSpec = motionScheme.defaultSpatialSpec(),
                     expandFrom = Alignment.Top
                 ) + fadeIn(
+                    animationSpec = motionScheme.defaultEffectsSpec(),
                     initialAlpha = 0.3f
                 ),
-                exit = fadeOut()
+                exit = fadeOut(animationSpec = motionScheme.fastEffectsSpec())
             ) {
                 DocumentTopAppBar(
                     title = {

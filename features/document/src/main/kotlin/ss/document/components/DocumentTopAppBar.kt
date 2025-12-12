@@ -43,6 +43,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -112,7 +113,7 @@ enum class DocumentTopAppBarAction(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun DocumentTopAppBar(
     title: @Composable () -> Unit,
@@ -131,16 +132,22 @@ internal fun DocumentTopAppBar(
     TopAppBar(
         title = {
             val density = LocalDensity.current
+            // Use MotionScheme spring specs for physics-based animation
+            val motionScheme = MaterialTheme.motionScheme
             AnimatedVisibility(
                 visible = collapsed,
-                enter = slideInVertically {
+                enter = slideInVertically(
+                    animationSpec = motionScheme.defaultSpatialSpec()
+                ) {
                     with(density) { -40.dp.roundToPx() }
                 } + expandVertically(
+                    animationSpec = motionScheme.defaultSpatialSpec(),
                     expandFrom = Alignment.Top
                 ) + fadeIn(
+                    animationSpec = motionScheme.defaultEffectsSpec(),
                     initialAlpha = 0.3f
                 ),
-                exit = fadeOut(),
+                exit = fadeOut(animationSpec = motionScheme.fastEffectsSpec()),
             ) {
                 title()
             }
