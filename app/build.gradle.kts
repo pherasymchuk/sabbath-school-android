@@ -127,10 +127,6 @@ foundry {
     android { features { androidTest() } }
 }
 
-ksp {
-    arg("circuit.codegen.mode", "hilt")
-}
-
 dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.appcompat)
@@ -164,13 +160,11 @@ dependencies {
     implementation(projects.features.settings)
     implementation(projects.features.share)
     implementation(projects.libraries.appWidget.api)
-    implementation(projects.libraries.circuit.api)
     implementation(projects.libraries.foundation.coroutines)
     implementation(projects.libraries.media.api)
     implementation(projects.libraries.navigation3.api)
     implementation(projects.libraries.navigation3.impl)
     implementation(projects.libraries.prefs.api)
-    implementation(projects.services.circuit.impl)
     implementation(projects.services.lessons.impl)
     implementation(projects.services.media.impl)
     implementation(projects.services.media.ui)
@@ -189,7 +183,6 @@ dependencies {
     baselineProfile(projects.baselineprofile)
 
     ksp(libs.androidx.hilt.compiler)
-    ksp(libs.circuit.codegen)
     ksp(libs.google.hilt.compiler)
 
     kspAndroidTest(libs.google.hilt.compiler)

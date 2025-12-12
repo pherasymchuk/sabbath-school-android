@@ -25,15 +25,15 @@ package com.cryart.sabbathschool.navigation
 import android.app.Activity
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.net.toUri
-import androidx.core.os.BundleCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.ss.auth.test.FakeAuthRepository
 import app.ss.models.auth.SSUser
 import com.cryart.sabbathschool.core.navigation.AppNavigator
 import com.cryart.sabbathschool.core.navigation.Destination
-import com.slack.circuit.runtime.screen.Screen
+import com.cryart.sabbathschool.ui.home.HomeActivity
 import org.amshove.kluent.shouldBeEqualTo
 import org.amshove.kluent.shouldBeNull
+import org.amshove.kluent.shouldNotBeNull
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -42,12 +42,6 @@ import org.robolectric.Robolectric
 import org.robolectric.Shadows
 import org.robolectric.android.controller.ActivityController
 import ss.foundation.coroutines.test.TestDispatcherProvider
-import ss.libraries.circuit.navigation.DocumentScreen
-import ss.libraries.circuit.navigation.HomeNavScreen
-import ss.libraries.circuit.navigation.LoginScreen
-import ss.libraries.circuit.navigation.ResourceScreen
-
-private const val ARG_EXTRA_SCREEN = "extra_screen"
 
 @RunWith(AndroidJUnit4::class)
 class AppNavigatorImplTest {
@@ -79,7 +73,7 @@ class AppNavigatorImplTest {
     }
 
     @Test
-    fun `should navigate to login when not authenticated`() {
+    fun `should navigate to HomeActivity when not authenticated`() {
         fakeAuthRepository.userDelegate = { Result.success(null) }
 
         navigator.navigate(activity, Destination.ABOUT)
@@ -87,8 +81,8 @@ class AppNavigatorImplTest {
         val shadow = Shadows.shadowOf(activity)
         val intent = shadow.nextStartedActivity
 
-        val screen = BundleCompat.getParcelable(intent.extras!!, ARG_EXTRA_SCREEN, Screen::class.java)
-        screen shouldBeEqualTo LoginScreen
+        intent.shouldNotBeNull()
+        intent.component?.className shouldBeEqualTo HomeActivity::class.java.name
     }
 
     @Test
@@ -103,7 +97,7 @@ class AppNavigatorImplTest {
     }
 
     @Test
-    fun `should navigate to login when not authenticated - web-link`() {
+    fun `should navigate to HomeActivity when not authenticated - web-link`() {
         fakeAuthRepository.userDelegate = { Result.success(null) }
 
         val uri = "https://sabbath-school.adventech.io/en/2021-03".toUri()
@@ -113,44 +107,48 @@ class AppNavigatorImplTest {
         val shadow = Shadows.shadowOf(activity)
         val intent = shadow.nextStartedActivity
 
-        val screen = BundleCompat.getParcelable(intent.extras!!, ARG_EXTRA_SCREEN, Screen::class.java)
-        screen shouldBeEqualTo LoginScreen
+        intent.shouldNotBeNull()
+        intent.component?.className shouldBeEqualTo HomeActivity::class.java.name
     }
 
     @Test
-    fun `should navigate to resource screen - web-link`() {
+    fun `should navigate to HomeActivity with resource index - web-link`() {
         val uri = "https://sabbath-school.adventech.io/en/2021-03".toUri()
         navigator.navigate(activity, uri)
 
         val shadow = Shadows.shadowOf(activity)
         val intent = shadow.nextStartedActivity
 
-        val screen = BundleCompat.getParcelable(intent.extras!!, ARG_EXTRA_SCREEN, Screen::class.java)
-        screen shouldBeEqualTo ResourceScreen("en/ss/2021-03")
+        intent.shouldNotBeNull()
+        intent.component?.className shouldBeEqualTo HomeActivity::class.java.name
+        intent.getStringExtra(AppNavigatorImpl.EXTRA_RESOURCE_INDEX) shouldBeEqualTo "en/ss/2021-03"
     }
 
     @Test
-    fun `should navigate to resource screen - aij - web-link`() {
+    fun `should navigate to HomeActivity with resource index - aij - web-link`() {
         val uri = "https://sabbath-school.adventech.io/resources/en/aij/2025-00-bb-pb".toUri()
         navigator.navigate(activity, uri)
 
         val shadow = Shadows.shadowOf(activity)
         val intent = shadow.nextStartedActivity
 
-        val screen = BundleCompat.getParcelable(intent.extras!!, ARG_EXTRA_SCREEN, Screen::class.java)
-        screen shouldBeEqualTo ResourceScreen("en/aij/2025-00-bb-pb")
+        intent.shouldNotBeNull()
+        intent.component?.className shouldBeEqualTo HomeActivity::class.java.name
+        intent.getStringExtra(AppNavigatorImpl.EXTRA_RESOURCE_INDEX) shouldBeEqualTo "en/aij/2025-00-bb-pb"
     }
 
     @Test
-    fun `should navigate to document screen - web-link`() {
+    fun `should navigate to HomeActivity with document index - web-link`() {
         val uri = "https://sabbath-school.adventech.io/en/2021-03/03/07-friday-further-thought/".toUri()
         navigator.navigate(activity, uri)
 
         val shadow = Shadows.shadowOf(activity)
         val intent = shadow.nextStartedActivity
 
-        val screen = BundleCompat.getParcelable(intent.extras!!, ARG_EXTRA_SCREEN, Screen::class.java)
-        screen shouldBeEqualTo DocumentScreen("en/ss/2021-03/03", null)
+        intent.shouldNotBeNull()
+        intent.component?.className shouldBeEqualTo HomeActivity::class.java.name
+        intent.getStringExtra(AppNavigatorImpl.EXTRA_RESOURCE_INDEX) shouldBeEqualTo "en/ss/2021-03"
+        intent.getStringExtra(AppNavigatorImpl.EXTRA_DOCUMENT_INDEX) shouldBeEqualTo "en/ss/2021-03/03"
     }
 
     @Test
@@ -161,7 +159,7 @@ class AppNavigatorImplTest {
         val shadow = Shadows.shadowOf(activity)
         val intent = shadow.nextStartedActivity
 
-        val screen = BundleCompat.getParcelable(intent.extras!!, ARG_EXTRA_SCREEN, Screen::class.java)
-        screen shouldBeEqualTo HomeNavScreen
+        intent.shouldNotBeNull()
+        intent.component?.className shouldBeEqualTo HomeActivity::class.java.name
     }
 }

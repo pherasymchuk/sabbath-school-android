@@ -11,5 +11,4 @@ foundry {
 dependencies {
     implementation(projects.common.designCompose)
     implementation(projects.common.translations)
-    implementation(projects.libraries.circuit.api)
 }

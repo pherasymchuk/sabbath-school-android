@@ -27,22 +27,16 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import androidx.core.app.TaskStackBuilder
 import androidx.core.os.bundleOf
 import app.ss.auth.AuthRepository
 import com.cryart.sabbathschool.core.navigation.AppNavigator
 import com.cryart.sabbathschool.core.navigation.Destination
 import com.cryart.sabbathschool.ui.about.AboutActivity
-import com.slack.circuit.runtime.screen.Screen
+import com.cryart.sabbathschool.ui.home.HomeActivity
 import kotlinx.coroutines.launch
 import ss.foundation.coroutines.DispatcherProvider
 import ss.foundation.coroutines.Scopable
 import ss.foundation.coroutines.mainScopable
-import ss.libraries.circuit.navigation.DocumentScreen
-import ss.libraries.circuit.navigation.HomeNavScreen
-import ss.libraries.circuit.navigation.LoginScreen
-import ss.libraries.circuit.navigation.ResourceScreen
-import ss.services.circuit.impl.CircuitActivity
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -64,7 +58,8 @@ constructor(
             val clazz = getDestinationClass(destination) ?: return@launch
 
             val intent = if (!isSignedIn()) {
-                screenIntent(activity, LoginScreen).apply {
+                // For unauthenticated users, launch HomeActivity which will show login
+                Intent(activity, HomeActivity::class.java).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 }
             } else {
@@ -89,12 +84,9 @@ constructor(
         }
     }
 
-    override fun navigate(context: Context, screen: Screen) {
-        CircuitActivity.launch(context, screen)
-    }
-
-    override fun screenIntent(context: Context, screen: Screen): Intent {
-        return CircuitActivity.launchIntent(context, screen)
+    override fun legacyLaunchIntent(context: Context, destination: Destination): Intent? {
+        val clazz = getDestinationClass(destination) ?: return null
+        return Intent(context, clazz)
     }
 
     private fun getDestinationClass(destination: Destination): Class<*>? {
@@ -113,7 +105,7 @@ constructor(
     }
 
     /**
-     * Navigate to either [ResourceScreen] or [DocumentScreen]
+     * Navigate to either Resource or Document screen
      * depending on the uri from web (sabbath-school.adventech.io) received.
      *
      * If no quarterly index is found in the Uri we launch normal flow.
@@ -124,32 +116,23 @@ constructor(
      */
     private fun navigateFromWeb(activity: Activity, uri: Uri) = scope.launch(dispatcherProvider.io) {
         if (!isSignedIn()) {
-            val intent = screenIntent(activity, LoginScreen).apply {
+            val intent = Intent(activity, HomeActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             }
             activity.startActivity(intent)
             return@launch
         }
 
-        val endIntent: Intent
-        val taskBuilder = TaskStackBuilder.create(activity)
-        taskBuilder.addNextIntent(screenIntent(activity, HomeNavScreen))
-
         val model = parseWebUrl(uri.toString()) ?: return@launch launchNormalFlow(activity)
 
-        if (model.documentIndex != null) {
-            taskBuilder.addNextIntent(screenIntent(activity, ResourceScreen(model.resourceIndex)))
-            endIntent = screenIntent(activity, DocumentScreen(model.documentIndex))
-        } else {
-            endIntent = screenIntent(
-                activity, ResourceScreen(model.resourceIndex)
-            )
+        // For deep links with resource/document info, we use intent extras
+        // The HomeActivity will handle these and navigate appropriately
+        val intent = Intent(activity, HomeActivity::class.java).apply {
+            putExtra(EXTRA_RESOURCE_INDEX, model.resourceIndex)
+            model.documentIndex?.let { putExtra(EXTRA_DOCUMENT_INDEX, it) }
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
-
-        with(taskBuilder) {
-            addNextIntent(endIntent)
-            startActivities()
-        }
+        activity.startActivity(intent)
     }
 
     private fun parseWebUrl(url: String): NavigationModel? {
@@ -169,10 +152,15 @@ constructor(
     }
 
     private fun launchNormalFlow(activity: Activity) {
-        val intent = screenIntent(activity, HomeNavScreen).apply {
+        val intent = Intent(activity, HomeActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
         activity.startActivity(intent)
+    }
+
+    companion object {
+        const val EXTRA_RESOURCE_INDEX = "extra_resource_index"
+        const val EXTRA_DOCUMENT_INDEX = "extra_document_index"
     }
 }
 

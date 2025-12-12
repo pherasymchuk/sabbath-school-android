@@ -10,45 +10,56 @@
 
 ## Architecture Overview
 
-This is a modular Android app using **Circuit** (Slack's UI framework) for presentation, **Hilt** for dependency injection, and **Jetpack Compose** for UI. The codebase follows a clean architecture with clear separation:
+This is a modular Android app using **Navigation 3** (Jetpack) for navigation, **Hilt** for dependency injection, and **Jetpack Compose** for UI. The codebase follows a clean architecture with clear separation:
 
 - **`app/`** - Main Android application module, wires everything together
-- **`app-tv/`** - Android TV variant
+- **`app-tv/`** - Android TV variant (still uses Circuit)
 - **`features/`** - Feature modules (feed, document, auth, media, settings, etc.)
-- **`libraries/`** - Reusable libraries (circuit-api, block-kit, storage, prefs, media)
+- **`libraries/`** - Reusable libraries (navigation3-api, block-kit, storage, prefs, media)
 - **`services/`** - Service implementations (resources, lessons, storage, prefs)
 - **`common/`** - Shared modules (auth, core, design, network, models)
 
-## Circuit Pattern (Presentation Layer)
+## Navigation 3 Pattern (Presentation Layer)
 
-Every screen follows the Circuit pattern with three files:
-1. **Screen** - Parcelable data class in `libraries/circuit/api/src/main/kotlin/ss/libraries/circuit/navigation/`
-2. **Presenter** - Business logic, annotated with `@CircuitInject(ScreenName::class, SingletonComponent::class)`
-3. **UI** - Composable function, also annotated with `@CircuitInject`
+Every screen follows the Navigation 3 pattern with these components:
+1. **NavKey** - Serializable data class/object in `libraries/navigation3/api/src/main/kotlin/ss/libraries/navigation3/`
+2. **ViewModel** - Business logic using standard Android ViewModel with `@HiltViewModel`
+3. **UI** - Composable function registered in `{Feature}NavModule.kt`
 
-Example from `features/feed/src/main/kotlin/ss/feed/FeedPresenter.kt`:
+Example NavKey from `libraries/navigation3/api`:
 ```kotlin
-@CircuitInject(FeedScreen::class, SingletonComponent::class)
-@AssistedFactory
-interface Factory {
-    fun create(navigator: Navigator, screen: FeedScreen): FeedPresenter
+@Serializable
+data class DocumentKey(
+    val index: String,
+    val segmentIndex: String? = null,
+) : NavKey
+```
+
+Example ViewModel from `features/document`:
+```kotlin
+@HiltViewModel
+class DocumentViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
+    private val repository: DocumentRepository,
+) : ViewModel() {
+    // State management using StateFlow
 }
 ```
 
-**State Pattern**: Use sealed interfaces for UI state with `CircuitUiState`, events with `CircuitUiEvent`.
+**State Pattern**: Use sealed interfaces for UI state, typically exposed via `StateFlow<State>`.
 
 ## Dependency Injection
 
 - **Hilt** with `@Module`, `@InstallIn(SingletonComponent::class)`, `@Provides`, `@Binds`
-- Circuit uses `@CircuitInject` for automatic presenter/UI factory registration
-- KSP configured with `circuit.codegen.mode = "hilt"` in build.gradle.kts files
+- ViewModels annotated with `@HiltViewModel` and injected via `hiltViewModel()`
+- Navigation registration via `{Feature}NavModule` using `EntryProviderBuilder`
 
 ## Key Conventions
 
 ### Package Structure
 - Features use `ss.{feature}` package (e.g., `ss.feed`, `ss.document`)
-- Libraries use `ss.libraries.{name}` (e.g., `ss.libraries.circuit.navigation`)
-- Services use `ss.services.{name}` (e.g., `ss.services.circuit.impl`)
+- Libraries use `ss.libraries.{name}` (e.g., `ss.libraries.navigation3`)
+- Services use `ss.services.{name}` (e.g., `ss.services.resources.impl`)
 
 ### Repository Pattern
 - Interfaces in `api` modules, implementations in `impl` modules
@@ -88,7 +99,7 @@ interface Factory {
 ## Testing
 
 - **Unit tests**: JUnit4, MockK, Turbine (for Flow testing), Kluent assertions
-- **Circuit tests**: Use `FakeNavigator`, `circuit-test` library, and `Presenter.test {}` extension
+- **ViewModel tests**: Use `runTest {}` from coroutines-test, Turbine for StateFlow testing
 - **Screenshot tests**: Roborazzi with `BaseScreenshotTest` base class from `libraries/test_utils/roborazzi`
 - **Fake implementations**: Create `Fake{ClassName}` in test sources (e.g., `FakeAuthRepository`, `FakeSSPrefs`)
 
@@ -97,14 +108,15 @@ interface Factory {
 Use typesafe project accessors:
 ```kotlin
 implementation(projects.common.designCompose)
-implementation(projects.libraries.circuit.api)
+implementation(projects.libraries.navigation3.api)
 implementation(projects.services.resources.api)
 ```
 
 ## File Naming
 
-- `{Feature}Screen.kt` - Circuit Screen definition
-- `{Feature}Presenter.kt` - Presenter with state management
+- `{Feature}Key.kt` - Navigation 3 NavKey definition
+- `{Feature}ViewModel.kt` - ViewModel with state management
 - `{Feature}ScreenUi.kt` or `{Feature}Ui.kt` - Composable UI
+- `{Feature}NavModule.kt` - Navigation registration module
 - `{Feature}State.kt` - State sealed interface (if separate file)
 - `BindingsModule.kt` - Hilt module with `@Binds` annotations

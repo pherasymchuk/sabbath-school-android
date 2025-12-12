@@ -27,7 +27,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import com.slack.circuit.runtime.screen.Screen
 
 /**
  * Navigate to different modules
@@ -47,8 +46,6 @@ interface AppNavigator {
      */
     fun navigate(activity: Activity, deepLink: Uri)
 
-    /** Navigate to a circuit [Screen]. */
-    fun navigate(context: Context, screen: Screen)
-
-    fun screenIntent(context: Context, screen: Screen): Intent
+    /** Launch an intent for a legacy destination. */
+    fun legacyLaunchIntent(context: Context, destination: Destination): Intent?
 }

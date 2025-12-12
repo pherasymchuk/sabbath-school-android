@@ -26,32 +26,34 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import app.ss.widgets.AppWidgetAction
-import com.cryart.sabbathschool.core.navigation.AppNavigator
+import com.cryart.sabbathschool.ui.home.HomeActivity
 import dagger.hilt.android.qualifiers.ApplicationContext
-import ss.libraries.circuit.navigation.DocumentScreen
-import ss.libraries.circuit.navigation.ResourceScreen
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class AppWidgetActionImpl @Inject constructor(
     @param:ApplicationContext private val appContext: Context,
-    private val appNavigator: AppNavigator,
 ) : AppWidgetAction {
 
     override fun launchLesson(quarterlyIndex: String): Intent =
-        appNavigator.screenIntent(
-            appContext, ResourceScreen(quarterlyIndex.toResourceIndex())
-        )
+        Intent(appContext, HomeActivity::class.java).apply {
+            putExtra(AppNavigatorImpl.EXTRA_RESOURCE_INDEX, quarterlyIndex.toResourceIndex())
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
 
     override fun launchRead(lessonIndex: String, dayIndex: String?): Intent =
-        appNavigator.screenIntent(
-            appContext,
-            DocumentScreen(index = lessonIndex.toDocumentIndex(), dayIndex)
-        ).apply {
+        Intent(appContext, HomeActivity::class.java).apply {
+            putExtra(AppNavigatorImpl.EXTRA_DOCUMENT_INDEX, lessonIndex.toDocumentIndex())
+            dayIndex?.let { putExtra(EXTRA_SEGMENT_INDEX, it) }
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             // See [Intent.filterEquals].
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 identifier = "$lessonIndex/${dayIndex.orEmpty()}"
             }
         }
+
+    companion object {
+        const val EXTRA_SEGMENT_INDEX = "extra_segment_index"
+    }
 }
