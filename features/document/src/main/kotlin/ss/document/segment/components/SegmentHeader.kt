@@ -28,11 +28,13 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.ss.design.compose.theme.SsTheme
@@ -113,4 +115,20 @@ internal fun SegmentHeader(
 
 internal fun String?.dateDisplay(): String? {
     return this?.let { DateHelper.formatDate(it) }
+}
+
+@PreviewLightDark
+@Composable
+private fun SegmentHeaderPreview() {
+    SsTheme {
+        Surface {
+            SegmentHeader(
+                title = "The Origins of Evil",
+                subtitle = "Sabbath Afternoon",
+                date = "2024-01-06",
+                contentColor = SsTheme.colors.primaryForeground,
+                style = null,
+            )
+        }
+    }
 }

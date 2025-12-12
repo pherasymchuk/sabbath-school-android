@@ -58,7 +58,7 @@ import io.adventech.blockkit.ui.style.ReaderStyleConfig
 import io.adventech.blockkit.ui.style.background
 import io.adventech.blockkit.ui.style.font.LocalFontFamilyProvider
 import io.adventech.blockkit.ui.style.primaryForeground
-import ss.document.DocumentOverlaySimple
+import ss.document.components.DocumentOverlaySimple
 import ss.document.DocumentOverlayState
 import ss.document.segment.components.SegmentHeader
 

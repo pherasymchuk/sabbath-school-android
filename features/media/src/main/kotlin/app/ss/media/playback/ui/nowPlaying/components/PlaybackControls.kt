@@ -39,6 +39,7 @@ import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.Surface
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
@@ -53,9 +54,11 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.ss.design.compose.theme.Dimens
+import app.ss.design.compose.theme.SsTheme
 import app.ss.design.compose.widget.icon.IconBox
 import app.ss.design.compose.widget.icon.IconSlot
 import ss.services.media.ui.PlaybackConnection
@@ -184,4 +187,64 @@ private fun IconButtonColors.containerColor(enabled: Boolean): Color {
 @Stable
 private fun IconButtonColors.contentColor(enabled: Boolean): Color {
     return if (enabled) contentColor else disabledContentColor
+}
+
+@PreviewLightDark
+@Composable
+private fun PlayBackControlsPreview() {
+    SsTheme {
+        Surface {
+            PlayBackControls(
+                spec = PlaybackStateSpec(
+                    isPlaying = false,
+                    isPlayEnabled = true,
+                    isError = false,
+                    isBuffering = false,
+                    canShowMini = false,
+                ),
+                contentColor = SsTheme.colors.primaryForeground,
+                playbackConnection = NoOpPlaybackConnection,
+            )
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun PlayBackControlsPlayingPreview() {
+    SsTheme {
+        Surface {
+            PlayBackControls(
+                spec = PlaybackStateSpec(
+                    isPlaying = true,
+                    isPlayEnabled = true,
+                    isError = false,
+                    isBuffering = false,
+                    canShowMini = false,
+                ),
+                contentColor = SsTheme.colors.primaryForeground,
+                playbackConnection = NoOpPlaybackConnection,
+            )
+        }
+    }
+}
+
+private object NoOpPlaybackConnection : PlaybackConnection {
+    override val isConnected = kotlinx.coroutines.flow.MutableStateFlow(false)
+    override val playbackState = kotlinx.coroutines.flow.MutableStateFlow(PlaybackStateSpec.NONE)
+    override val nowPlaying = kotlinx.coroutines.flow.MutableStateFlow(androidx.media3.common.MediaMetadata.EMPTY)
+    override val playbackQueue = kotlinx.coroutines.flow.MutableStateFlow(ss.libraries.media.model.PlaybackQueue())
+    override val playbackProgress = kotlinx.coroutines.flow.MutableStateFlow(ss.libraries.media.model.PlaybackProgressState())
+    override val playbackSpeed = kotlinx.coroutines.flow.MutableStateFlow(ss.libraries.media.model.PlaybackSpeed.NORMAL)
+    override fun playPause() = Unit
+    override fun playAudio(audio: app.ss.models.media.AudioFile) = Unit
+    override fun playAudios(audios: List<app.ss.models.media.AudioFile>, index: Int) = Unit
+    override fun toggleSpeed() = Unit
+    override fun setQueue(audios: List<app.ss.models.media.AudioFile>, index: Int) = Unit
+    override fun skipToItem(position: Int) = Unit
+    override fun seekTo(progress: Long) = Unit
+    override fun rewind() = Unit
+    override fun fastForward() = Unit
+    override fun stop() = Unit
+    override fun releaseMini() = Unit
 }

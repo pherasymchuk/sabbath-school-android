@@ -28,32 +28,21 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -61,18 +50,11 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.LinkAnnotation
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextLinkStyles
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.withLink
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import app.ss.auth.components.ConfirmAnonymousAuthDialog
+import app.ss.auth.components.LoginButtons
 import app.ss.design.compose.extensions.snackbar.rememberSsSnackbarState
-import app.ss.design.compose.theme.LatoFontFamily
 import app.ss.design.compose.theme.SsTheme
 import app.ss.design.compose.theme.color.SsColors
 import ss.libraries.navigation3.LocalSsNavigator
@@ -160,7 +142,7 @@ internal fun LoginScreenContent(
                 }
             }
 
-            Buttons(
+            LoginButtons(
                 enabled = state !is LoginState.Loading,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
                 onSignInWithGoogle = onSignInWithGoogle,
@@ -178,125 +160,6 @@ internal fun LoginScreenContent(
             onDismiss = onDismissAnonymous,
         )
     }
-}
-
-@Composable
-private fun Buttons(
-    enabled: Boolean,
-    modifier: Modifier = Modifier,
-    onSignInWithGoogle: () -> Unit = {},
-    onSignInAnonymously: () -> Unit = {},
-) {
-    val context = LocalContext.current
-
-    Column(modifier = modifier.width(270.dp)) {
-
-        Button(
-            onClick = onSignInWithGoogle,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp),
-            enabled = enabled,
-            shape = RoundedCornerShape(4.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.White,
-                contentColor = SsColors.BaseGrey3
-            ),
-            elevation = ButtonDefaults.buttonElevation(
-                defaultElevation = 4.dp
-            )
-        ) {
-
-            Icon(
-                painter = painterResource(id = AuthR.drawable.ic_google_logo),
-                contentDescription = null,
-                tint = Color.Unspecified
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Text(
-                text = "Sign in with Google",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold
-                )
-            )
-        }
-
-        TextButton(
-            onClick = onSignInAnonymously,
-            modifier = Modifier
-                .fillMaxWidth(),
-            enabled = enabled,
-        ) {
-            Text(
-                text = stringResource(id = L10nR.string.ss_login_button_anonymous),
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold
-                ),
-                color = SsTheme.colors.primaryForeground
-            )
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        val textColor = SsTheme.colors.primaryForeground
-        val annotatedText by remember {
-            mutableStateOf(
-                buildAnnotatedString {
-                    append("By continuing, you agree to our Terms of Service as described in our ")
-                    withLink(
-                        link = LinkAnnotation.Url(
-                            url = context.getString(L10nR.string.ss_privacy_policy_url),
-                            styles = TextLinkStyles(
-                                style = SpanStyle(
-                                    color = textColor,
-                                    fontWeight = FontWeight.Bold,
-                                    fontFamily = LatoFontFamily,
-                                    textDecoration = TextDecoration.Underline,
-                                )
-                            )
-                        )
-                    ) {
-                        append("Privacy Policy")
-                    }
-                    append(".")
-                    append(" Sabbath School collects User IDs to help identify and restore user saved content.")
-                }
-            )
-        }
-        Text(
-            text = annotatedText,
-            modifier = Modifier.fillMaxWidth(),
-            style = SsTheme.typography.bodySmall.copy(fontSize = 11.sp, color = textColor),
-        )
-    }
-}
-
-@Composable
-private fun ConfirmAnonymousAuthDialog(
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(text = stringResource(id = L10nR.string.ss_login_anonymously_dialog_title))
-        },
-        text = {
-            Text(text = stringResource(id = L10nR.string.ss_login_anonymously_dialog_description))
-        },
-        confirmButton = {
-            TextButton(onClick = onConfirm) {
-                Text(text = stringResource(id = L10nR.string.ss_login_anonymously_dialog_positive))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(text = stringResource(id = L10nR.string.ss_login_anonymously_dialog_negative))
-            }
-        }
-    )
 }
 
 @PreviewLightDark

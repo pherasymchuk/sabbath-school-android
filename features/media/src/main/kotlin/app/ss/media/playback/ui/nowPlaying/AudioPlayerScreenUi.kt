@@ -25,17 +25,13 @@ package app.ss.media.playback.ui.nowPlaying
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -55,15 +51,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.ss.design.compose.theme.SsTheme
-import app.ss.design.compose.widget.icon.IconBox
-import app.ss.design.compose.widget.icon.IconSlot
-import app.ss.media.playback.ui.common.PlaybackSpeedLabel
+import app.ss.media.playback.ui.nowPlaying.components.BottomControls
 import app.ss.media.playback.ui.nowPlaying.components.BoxState
 import app.ss.media.playback.ui.nowPlaying.components.PlayBackControls
 import app.ss.media.playback.ui.nowPlaying.components.PlaybackProgressDuration
-import ss.libraries.media.model.PlaybackSpeed
-import app.ss.translations.R as L10nR
-import ss.libraries.media.resources.R as MediaR
 
 /**
  * Audio player screen composable that renders based on [AudioPlayerState].
@@ -213,39 +204,6 @@ internal fun NowPlayingScreen(
                 }
             }
         )
-    }
-}
-
-@Composable
-private fun BottomControls(
-    modifier: Modifier = Modifier,
-    playbackSpeed: PlaybackSpeed,
-    toggleSpeed: () -> Unit = {},
-    toggleExpand: () -> Unit = {}
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(end = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-
-        PlaybackSpeedLabel(
-            playbackSpeed = playbackSpeed,
-            toggleSpeed = { toggleSpeed() },
-            contentColor = SsTheme.colors.iconsSecondary
-        )
-
-        IconButton(onClick = toggleExpand) {
-            IconBox(
-                icon = IconSlot.fromResource(
-                    MediaR.drawable.ic_audio_icon_playlist,
-                    contentDescription = L10nR.string.ss_action_playlist
-                ),
-                contentColor = SsTheme.colors.iconsSecondary
-            )
-        }
     }
 }
 

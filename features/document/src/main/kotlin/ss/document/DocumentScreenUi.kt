@@ -33,9 +33,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeContent
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -68,25 +66,15 @@ import io.adventech.blockkit.ui.style.font.LocalFontFamilyProvider
 import io.adventech.blockkit.ui.style.primaryForeground
 import kotlinx.collections.immutable.persistentListOf
 import ss.document.components.DocumentLoadingView
+import ss.document.components.DocumentOverlay
+import ss.document.components.DocumentOverlaySimple
 import ss.document.components.DocumentPager
 import ss.document.components.DocumentTitleBar
 import ss.document.components.DocumentTopAppBar
-import ss.document.segment.components.overlay.BlocksOverlayContent
-import ss.document.segment.components.overlay.ExcerptOverlayContent
-import ss.document.segment.hidden.HiddenSegmentScreen
-import app.ss.media.playback.ui.nowPlaying.AudioPlayerScreen
 import app.ss.media.playback.ui.nowPlaying.mini.MiniPlayerScreen
-import app.ss.media.playback.ui.video.VideosScreen
 import ss.document.producer.ReaderStyleStateProducer
 import ss.document.producer.UserInputStateProducer
 import ss.document.segment.producer.SegmentOverlayStateProducer
-import ss.libraries.navigation3.AudioPlayerKey
-import ss.libraries.navigation3.HiddenSegmentKey
-import ss.libraries.navigation3.LocalSsNavigator
-import ss.libraries.navigation3.ReaderOptionsKey
-import ss.libraries.navigation3.ShareOptionsKey
-import ss.libraries.navigation3.VideosKey
-import ss.share.options.ShareOptionsScreen
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalHazeMaterialsApi::class)
 @Composable
@@ -223,186 +211,6 @@ internal fun DocumentScreenUi(
     }
 
     SystemUiEffect(lightStatusBar)
-}
-
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-internal fun DocumentOverlay(
-    documentOverlayState: DocumentOverlayState?,
-    readerStyle: ReaderStyleConfig,
-    readerStyleStateProducer: ReaderStyleStateProducer,
-    segmentOverlayStateProducer: SegmentOverlayStateProducer,
-    userInputStateProducer: UserInputStateProducer,
-) {
-    val hapticFeedback = LocalSsHapticFeedback.current
-    val containerColor = readerStyle.theme.background()
-    val contentColor = readerStyle.theme.primaryForeground()
-    val navigator = LocalSsNavigator.current
-
-    when (val overlayState = documentOverlayState) {
-        is DocumentOverlayState.BottomSheet -> {
-            val sheetState = rememberModalBottomSheetState(
-                skipPartiallyExpanded = overlayState.skipPartiallyExpanded
-            )
-
-            ModalBottomSheet(
-                onDismissRequest = overlayState.onDismiss,
-                sheetState = sheetState,
-                containerColor = if (overlayState.themed) containerColor else SsTheme.colors.primaryBackground,
-                contentColor = if (overlayState.themed) contentColor else SsTheme.colors.primaryForeground,
-            ) {
-                LaunchedEffect(overlayState.key) {
-                    if (overlayState.feedback) {
-                        hapticFeedback.performScreenView()
-                    }
-                }
-                // Render the appropriate content based on the key type
-                when (val key = overlayState.key) {
-                    is ReaderOptionsKey -> {
-                        ss.document.reader.ReaderOptionsScreen()
-                    }
-                    is AudioPlayerKey -> {
-                        AudioPlayerScreen(
-                            resourceId = key.resourceId,
-                            segmentId = key.segmentId,
-                        )
-                    }
-                    is VideosKey -> {
-                        VideosScreen(
-                            documentIndex = key.documentIndex,
-                            documentId = key.documentId,
-                        )
-                    }
-                    is ShareOptionsKey -> {
-                        ShareOptionsScreen(
-                            options = key.options,
-                            title = key.title,
-                            resourceColor = key.resourceColor,
-                        )
-                    }
-                    is HiddenSegmentKey -> {
-                        HiddenSegmentScreen(
-                            id = key.id,
-                            index = key.index,
-                            documentIndex = key.documentIndex,
-                            navigator = navigator,
-                            readerStyleStateProducer = readerStyleStateProducer,
-                            segmentOverlayStateProducer = segmentOverlayStateProducer,
-                            userInputStateProducer = userInputStateProducer,
-                        )
-                    }
-                    else -> {
-                        // For unknown keys, just dismiss
-                        LaunchedEffect(key) {
-                            overlayState.onDismiss()
-                        }
-                    }
-                }
-            }
-        }
-
-        is DocumentOverlayState.Segment.Blocks -> {
-            BlocksOverlayContent(
-                state = overlayState.state,
-                onDismiss = overlayState.onDismiss,
-            )
-        }
-
-        is DocumentOverlayState.Segment.Excerpt -> {
-            ExcerptOverlayContent(
-                state = overlayState.state,
-                onDismiss = overlayState.onDismiss,
-            )
-        }
-
-        is DocumentOverlayState.Segment.None -> Unit
-        null -> Unit
-    }
-}
-
-/**
- * Simplified overlay that handles all key types except HiddenSegmentKey.
- * Used when producers are not available.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-internal fun DocumentOverlaySimple(
-    documentOverlayState: DocumentOverlayState?,
-    readerStyle: ReaderStyleConfig,
-) {
-    val hapticFeedback = LocalSsHapticFeedback.current
-    val containerColor = readerStyle.theme.background()
-    val contentColor = readerStyle.theme.primaryForeground()
-    val navigator = LocalSsNavigator.current
-
-    when (val overlayState = documentOverlayState) {
-        is DocumentOverlayState.BottomSheet -> {
-            val sheetState = rememberModalBottomSheetState(
-                skipPartiallyExpanded = overlayState.skipPartiallyExpanded
-            )
-
-            ModalBottomSheet(
-                onDismissRequest = overlayState.onDismiss,
-                sheetState = sheetState,
-                containerColor = if (overlayState.themed) containerColor else SsTheme.colors.primaryBackground,
-                contentColor = if (overlayState.themed) contentColor else SsTheme.colors.primaryForeground,
-            ) {
-                LaunchedEffect(overlayState.key) {
-                    if (overlayState.feedback) {
-                        hapticFeedback.performScreenView()
-                    }
-                }
-                when (val key = overlayState.key) {
-                    is ReaderOptionsKey -> {
-                        ss.document.reader.ReaderOptionsScreen()
-                    }
-                    is AudioPlayerKey -> {
-                        AudioPlayerScreen(
-                            resourceId = key.resourceId,
-                            segmentId = key.segmentId,
-                        )
-                    }
-                    is VideosKey -> {
-                        VideosScreen(
-                            documentIndex = key.documentIndex,
-                            documentId = key.documentId,
-                        )
-                    }
-                    is ShareOptionsKey -> {
-                        ShareOptionsScreen(
-                            options = key.options,
-                            title = key.title,
-                            resourceColor = key.resourceColor,
-                        )
-                    }
-                    else -> {
-                        // For unknown keys (including HiddenSegmentKey without producers), just dismiss
-                        LaunchedEffect(key) {
-                            overlayState.onDismiss()
-                        }
-                    }
-                }
-            }
-        }
-
-        is DocumentOverlayState.Segment.Blocks -> {
-            BlocksOverlayContent(
-                state = overlayState.state,
-                onDismiss = overlayState.onDismiss,
-            )
-        }
-
-        is DocumentOverlayState.Segment.Excerpt -> {
-            ExcerptOverlayContent(
-                state = overlayState.state,
-                onDismiss = overlayState.onDismiss,
-            )
-        }
-
-        is DocumentOverlayState.Segment.None -> Unit
-        null -> Unit
-    }
 }
 
 private fun State.showTopBar(collapsed: Boolean): Boolean = when (this) {

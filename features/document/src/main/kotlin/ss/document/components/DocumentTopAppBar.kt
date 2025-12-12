@@ -80,6 +80,8 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import ss.misc.DateHelper
 import androidx.compose.material.icons.Icons as MaterialIcons
+import androidx.compose.material3.Surface
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import app.ss.translations.R as L10nR
 import ss.document.R as DocumentR
 import ss.libraries.media.resources.R as MediaR
@@ -388,4 +390,41 @@ private fun DocumentSegmentDropdown(
 
 internal fun String?.dateDisplay(): String? {
     return this?.let { DateHelper.formatDate(it) }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@PreviewLightDark
+@Composable
+private fun DocumentTopAppBarPreview() {
+    SsTheme {
+        Surface {
+            DocumentTopAppBar(
+                title = { Text("Lesson Title") },
+                actions = persistentListOf(
+                    DocumentTopAppBarAction.Audio,
+                    DocumentTopAppBarAction.Share,
+                    DocumentTopAppBarAction.DisplayOptions,
+                ),
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@PreviewLightDark
+@Composable
+private fun DocumentTopAppBarCollapsedPreview() {
+    SsTheme {
+        Surface {
+            DocumentTopAppBar(
+                title = { Text("Lesson Title") },
+                collapsible = true,
+                collapsed = true,
+                actions = persistentListOf(
+                    DocumentTopAppBarAction.Audio,
+                    DocumentTopAppBarAction.Video,
+                ),
+            )
+        }
+    }
 }

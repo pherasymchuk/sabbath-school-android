@@ -27,34 +27,24 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import app.ss.design.compose.extensions.haptics.LocalSsHapticFeedback
 import app.ss.design.compose.theme.SsTheme
 import app.ss.design.compose.widget.divider.Divider
-import app.ss.design.compose.widget.icon.IconBox
-import app.ss.design.compose.widget.icon.Icons
-import app.ss.design.compose.widget.search.SearchInput
+import app.ss.languages.components.LanguagesSearchView
 import app.ss.languages.list.LanguagesList
 import app.ss.languages.state.LanguageUiModel
-import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import ss.libraries.navigation3.LocalSsNavigator
 
@@ -79,7 +69,6 @@ fun LanguagesScreen(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun LanguagesScreenContent(
     state: LanguagesUiState,
@@ -92,7 +81,7 @@ internal fun LanguagesScreenContent(
     Scaffold(
         modifier = modifier,
         topBar = {
-            SearchView(
+            LanguagesSearchView(
                 onQuery = onSearch,
                 onNavBack = {
                     hapticFeedback.performClick()
@@ -125,38 +114,6 @@ internal fun LanguagesScreenContent(
             }
         }
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SearchView(
-    onQuery: (String?) -> Unit,
-    onNavBack: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var queryValue by rememberSaveable { mutableStateOf("") }
-
-    TopAppBar(
-        title = {
-            SearchInput(
-                value = queryValue,
-                onQueryChange = {
-                    queryValue = it
-                    onQuery(it.ifEmpty { null })
-                },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = "Search Languages",
-            )
-        },
-        modifier = modifier,
-        navigationIcon = { IconButton(onClick = onNavBack) { IconBox(icon = Icons.ArrowBack) } },
-    )
-}
-
-@PreviewLightDark
-@Composable
-private fun SearchPreview() {
-    SsTheme { Surface { SearchView(onQuery = {}, onNavBack = {}) } }
 }
 
 @PreviewLightDark

@@ -36,14 +36,18 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import app.ss.design.compose.theme.Dimens
+import app.ss.design.compose.theme.SsTheme
 import io.adventech.blockkit.model.feed.FeedDirection
 import io.adventech.blockkit.model.feed.FeedGroup
 import io.adventech.blockkit.model.resource.Resource
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 import ss.feed.components.view.FeedGroupView
 import ss.feed.components.view.FeedResourceView
 import ss.feed.model.FeedResourceSpec
@@ -149,6 +153,18 @@ internal fun FeedLazyColum(
             ) {
                 itemClick(spec.index)
             }
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun FeedLazyColumPreview() {
+    SsTheme {
+        Surface {
+            FeedLazyColum(
+                groups = persistentListOf(PlaceHolders.FEED_GROUP),
+            )
         }
     }
 }

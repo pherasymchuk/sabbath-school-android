@@ -27,14 +27,18 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import app.ss.design.compose.extensions.modifier.asPlaceholder
 import app.ss.design.compose.extensions.window.containerHeight
+import app.ss.design.compose.theme.SsTheme
 import app.ss.design.compose.widget.content.ContentBox
 import app.ss.design.compose.widget.image.RemoteImage
 
@@ -69,6 +73,24 @@ internal fun SegmentCover(
             )
 
             headerContent()
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun SegmentCoverPreview() {
+    SsTheme {
+        Surface {
+            SegmentCover(
+                cover = null,
+                headerContent = {
+                    Text(
+                        text = "Header Content",
+                        style = SsTheme.typography.titleLarge,
+                    )
+                }
+            )
         }
     }
 }

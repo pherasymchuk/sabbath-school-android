@@ -22,24 +22,14 @@
 
 package ss.resource
 
-import android.widget.TextView
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -50,26 +40,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.ss.design.compose.extensions.color.parse
-import app.ss.design.compose.extensions.color.toAndroidColor
 import app.ss.design.compose.extensions.haptics.LocalSsHapticFeedback
 import app.ss.design.compose.theme.SsTheme
 import app.ss.design.compose.widget.scaffold.HazeScaffold
 import app.ss.design.compose.widget.scaffold.SystemUiEffect
 import io.adventech.blockkit.model.resource.ProgressTracking
 import io.adventech.blockkit.ui.style.font.LocalFontFamilyProvider
-import io.noties.markwon.Markwon
 import kotlinx.collections.immutable.persistentListOf
 import ss.libraries.navigation3.LocalSsNavigator
-import ss.libraries.navigation3.NavKey
-import ss.libraries.navigation3.ShareOptionsKey
 import ss.resource.components.CoverContent
 import ss.resource.components.ResourceCover
 import ss.resource.components.ResourceLoadingView
+import ss.resource.components.ResourceOverlayContent
 import ss.resource.components.ResourceTopAppBar
 import ss.resource.components.content.ResourceSectionsStateProducer
 import ss.resource.components.footer
@@ -78,7 +63,6 @@ import ss.resource.components.resourceSections
 import ss.resource.components.spec.SharePosition
 import ss.resource.producer.CtaScreenState
 import ss.resource.producer.ResourceCtaScreenProducer
-import com.cryart.design.R as DesignR
 
 @Suppress("DEPRECATION")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -205,7 +189,7 @@ fun ResourceScreen(
                     footer(credits, features)
                 }
 
-                OverlayContent(
+                ResourceOverlayContent(
                     state = overlayState,
                     onDismiss = viewModel::dismissOverlay,
                     onNavigate = navigator::goTo,
@@ -215,79 +199,4 @@ fun ResourceScreen(
     }
 
     SystemUiEffect(lightStatusBar)
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun OverlayContent(
-    state: ResourceOverlayState?,
-    onDismiss: () -> Unit,
-    onNavigate: (NavKey) -> Unit,
-) {
-    val hapticFeedback = LocalSsHapticFeedback.current
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-    when (state) {
-        is ResourceOverlayState.IntroductionBottomSheet -> {
-            ModalBottomSheet(
-                onDismissRequest = onDismiss,
-                sheetState = sheetState,
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp)
-                ) {
-                    MarkdownText(
-                        text = state.markdown,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 8.dp, vertical = 16.dp),
-                    )
-
-                    Spacer(modifier = Modifier.height(48.dp))
-                }
-
-                LaunchedEffect(Unit) { hapticFeedback.performScreenView() }
-            }
-        }
-        is ResourceOverlayState.ShareBottomSheet -> {
-            ModalBottomSheet(
-                onDismissRequest = onDismiss,
-                sheetState = sheetState,
-            ) {
-                // Navigate to ShareOptions screen
-                LaunchedEffect(Unit) {
-                    onNavigate(
-                        ShareOptionsKey(
-                            options = state.options,
-                            resourceColor = state.primaryColorDark,
-                            title = state.title,
-                        )
-                    )
-                    onDismiss()
-                }
-            }
-        }
-        null -> Unit
-    }
-}
-
-@Composable
-private fun MarkdownText(text: String, modifier: Modifier = Modifier) {
-    val context = LocalContext.current
-    val markwon = remember { Markwon.create(context) }
-    val contentColor = SsTheme.colors.primaryForeground
-
-    AndroidView(
-        factory = { _ ->
-            TextView(context).apply {
-                markwon.setMarkdown(this, text)
-                setTextColor(contentColor.toAndroidColor())
-                setTextAppearance(DesignR.style.TextAppearance_Markdown)
-            }
-        },
-        modifier = modifier,
-    )
 }

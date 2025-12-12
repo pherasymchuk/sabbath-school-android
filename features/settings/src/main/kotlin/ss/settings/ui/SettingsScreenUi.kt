@@ -27,15 +27,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -47,7 +43,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import app.ss.design.compose.extensions.haptics.LocalSsHapticFeedback
-import app.ss.design.compose.theme.SsTheme
 import app.ss.design.compose.widget.icon.IconBox
 import app.ss.design.compose.widget.icon.Icons
 import app.ss.design.compose.widget.scaffold.HazeScaffold
@@ -58,6 +53,9 @@ import ss.libraries.navigation3.LoginKey
 import ss.settings.Overlay
 import ss.settings.SettingsNavEvent
 import ss.settings.SettingsViewModel
+import ss.settings.ui.dialogs.ConfirmDeleteAccountDialog
+import ss.settings.ui.dialogs.ConfirmRemoveDownloadsDialog
+import ss.settings.ui.dialogs.ReminderTimePickerDialog
 import app.ss.translations.R as L10nR
 
 @Suppress("DEPRECATION")
@@ -175,122 +173,4 @@ private fun SettingsContent(
             hapticFeedback.performScreenView()
         }
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ReminderTimePickerDialog(
-    hour: Int,
-    minute: Int,
-    onDismiss: () -> Unit,
-    onConfirm: (Int, Int) -> Unit,
-) {
-    val hapticFeedback = LocalSsHapticFeedback.current
-    val timePickerState = rememberTimePickerState(
-        initialHour = hour,
-        initialMinute = minute,
-    )
-
-    AlertDialog(
-        onDismissRequest = {
-            hapticFeedback.performClick()
-            onDismiss()
-        },
-        title = { Text(stringResource(L10nR.string.ss_settings_reminder_time)) },
-        text = {
-            TimePicker(state = timePickerState)
-        },
-        confirmButton = {
-            TextButton(onClick = {
-                hapticFeedback.performSuccess()
-                onConfirm(timePickerState.hour, timePickerState.minute)
-            }) {
-                Text(stringResource(android.R.string.ok))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = {
-                hapticFeedback.performClick()
-                onDismiss()
-            }) {
-                Text(stringResource(android.R.string.cancel))
-            }
-        }
-    )
-}
-
-@Composable
-private fun ConfirmDeleteAccountDialog(
-    onDismiss: () -> Unit,
-    onConfirm: () -> Unit,
-) {
-    val hapticFeedback = LocalSsHapticFeedback.current
-
-    AlertDialog(
-        onDismissRequest = {
-            hapticFeedback.performSuccess()
-            onDismiss()
-        },
-        title = { Text(stringResource(L10nR.string.ss_delete_account_question)) },
-        text = {
-            Text(
-                text = stringResource(id = L10nR.string.ss_delete_account_warning),
-                style = SsTheme.typography.bodyMedium
-            )
-        },
-        confirmButton = {
-            TextButton(onClick = {
-                hapticFeedback.performError()
-                onConfirm()
-            }) {
-                Text(stringResource(L10nR.string.ss_login_anonymously_dialog_positive))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = {
-                hapticFeedback.performSuccess()
-                onDismiss()
-            }) {
-                Text(stringResource(L10nR.string.ss_login_anonymously_dialog_negative))
-            }
-        }
-    )
-}
-
-@Composable
-private fun ConfirmRemoveDownloadsDialog(
-    onDismiss: () -> Unit,
-    onConfirm: () -> Unit,
-) {
-    val hapticFeedback = LocalSsHapticFeedback.current
-
-    AlertDialog(
-        onDismissRequest = {
-            hapticFeedback.performSuccess()
-            onDismiss()
-        },
-        title = { Text(stringResource(L10nR.string.ss_delete_downloads)) },
-        text = {
-            Text(
-                text = stringResource(id = L10nR.string.ss_delete_downloads_confirm),
-                style = SsTheme.typography.bodyMedium
-            )
-        },
-        confirmButton = {
-            TextButton(onClick = {
-                hapticFeedback.performError()
-                onConfirm()
-            }) {
-                Text(stringResource(L10nR.string.ss_login_anonymously_dialog_positive))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = {
-                hapticFeedback.performSuccess()
-                onDismiss()
-            }) {
-                Text(stringResource(L10nR.string.ss_login_anonymously_dialog_negative))
-            }
-        }
-    )
 }
