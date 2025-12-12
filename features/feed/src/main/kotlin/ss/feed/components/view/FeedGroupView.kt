@@ -26,11 +26,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -44,9 +42,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.ss.design.compose.theme.Dimens
 import app.ss.design.compose.theme.SsTheme
+import app.ss.design.compose.widget.carousel.HeroCarousel
 import app.ss.design.compose.widget.icon.IconBox
 import app.ss.design.compose.widget.icon.Icons
-import app.ss.design.compose.widget.list.SnappingLazyRow
 import io.adventech.blockkit.model.feed.FeedDirection
 import io.adventech.blockkit.model.feed.FeedGroup
 import io.adventech.blockkit.model.feed.FeedScope
@@ -71,16 +69,18 @@ internal fun FeedGroupView(
     ) {
         FeedGroupHeader(group.title, group.seeAll, Modifier, seeAllClick)
 
-        SnappingLazyRow(
-            modifier = Modifier.fillMaxWidth(),
+        HeroCarousel(
+            items = group.resources.orEmpty(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(240.dp),
+            preferredItemWidth = 160.dp,
+            itemSpacing = 12.dp,
             contentPadding = PaddingValues(horizontal = Dimens.grid_4),
-        ) {
-            items(group.resources.orEmpty(), key = { it.id }) { resource ->
-                FeedResourceView(resource.toSpec(group), Modifier) {
-                    itemClick(resource)
-                }
-
-                Spacer(modifier = Modifier.width(20.dp))
+            key = { it.id },
+        ) { resource ->
+            FeedResourceView(resource.toSpec(group), Modifier) {
+                itemClick(resource)
             }
         }
     }

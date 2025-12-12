@@ -70,9 +70,9 @@ import app.ss.design.compose.theme.Dimens
 import app.ss.design.compose.theme.SsTheme
 import app.ss.design.compose.theme.color.SsColors
 import app.ss.design.compose.widget.DragHandle
+import app.ss.design.compose.widget.carousel.HeroCarousel
 import app.ss.design.compose.widget.content.ContentBox
 import app.ss.design.compose.widget.image.RemoteImage
-import app.ss.design.compose.widget.list.SnappingLazyRow
 import app.ss.media.playback.ui.spec.VideoSpec
 import app.ss.media.playback.ui.spec.VideosInfoSpec
 import app.ss.media.playback.ui.spec.toSpec
@@ -214,23 +214,21 @@ private fun VideosInfoList(
                 .padding(top = 16.dp)
         )
 
-        SnappingLazyRow(
-            state = listState,
-            contentPadding = PaddingValues(
-                horizontal = 16.dp,
-                vertical = 16.dp
+        HeroCarousel(
+            items = spec.clips,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp),
+            preferredItemWidth = 200.dp,
+            itemSpacing = 8.dp,
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            key = { it.id },
+        ) { video ->
+            VideoColumn(
+                video = video.toSpec(),
+                modifier = Modifier,
+                onVideoClick = { onVideoClick(video) }
             )
-        ) {
-            itemsIndexed(
-                spec.clips,
-                key = { _: Int, item: SSVideo -> item.id }
-            ) { _, video ->
-                VideoColumn(
-                    video = video.toSpec(),
-                    modifier = Modifier,
-                    onVideoClick = { onVideoClick(video) }
-                )
-            }
         }
     }
 
