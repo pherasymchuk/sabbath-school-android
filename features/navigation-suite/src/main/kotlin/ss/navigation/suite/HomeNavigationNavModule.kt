@@ -23,25 +23,32 @@
 package ss.navigation.suite
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Text
+import androidx.compose.material3.WideNavigationRail
+import androidx.compose.material3.WideNavigationRailItem
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuOpen
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -140,12 +147,9 @@ private fun NavigationSuiteContent(
     val layoutType = NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(currentWindowAdaptiveInfo())
     val hapticFeedback = LocalSsHapticFeedback.current
 
-    val content: @Composable (PaddingValues) -> Unit = {
+    val content: @Composable () -> Unit = {
         AnimatedContent(
             targetState = selectedItem,
-            transitionSpec = {
-                fadeIn(animationSpec = tween(300)).togetherWith(fadeOut(animationSpec = tween(300)))
-            },
             label = "content",
         ) { item ->
             FeedScreen(
@@ -182,31 +186,61 @@ private fun NavigationSuiteContent(
                     }
                 },
                 blurBottomBar = true,
-                content = content,
+                content = { content() },
             )
         }
         else -> {
-            NavigationSuiteScaffold(
-                navigationSuiteItems = {
+            // Use WideNavigationRail for tablets and larger screens
+            var isRailExpanded by rememberSaveable { mutableStateOf(false) }
+
+            Row(modifier = modifier.fillMaxSize()) {
+                WideNavigationRail(
+                    expanded = isRailExpanded,
+                    header = {
+                        IconButton(
+                            onClick = {
+                                isRailExpanded = !isRailExpanded
+                                hapticFeedback.performClick()
+                            }
+                        ) {
+                            Icon(
+                                imageVector = if (isRailExpanded) {
+                                    Icons.AutoMirrored.Filled.MenuOpen
+                                } else {
+                                    Icons.Filled.Menu
+                                },
+                                contentDescription = "Toggle Navigation",
+                            )
+                        }
+                    },
+                ) {
                     items.forEach { model ->
-                        item(
+                        WideNavigationRailItem(
+                            railExpanded = isRailExpanded,
+                            selected = model == selectedItem,
+                            onClick = {
+                                onItemSelected(model)
+                                hapticFeedback.performSegmentSwitch()
+                            },
                             icon = {
                                 Icon(
                                     painter = painterResource(model.iconRes),
                                     contentDescription = stringResource(model.title),
                                 )
                             },
-                            selected = selectedItem == model,
-                            onClick = {
-                                onItemSelected(model)
-                                hapticFeedback.performSegmentSwitch()
+                            label = {
+                                Text(
+                                    text = stringResource(model.title),
+                                    style = MaterialTheme.typography.labelMedium,
+                                )
                             },
                         )
                     }
-                },
-                modifier = modifier,
-            ) {
-                content(PaddingValues())
+                }
+
+                Box(modifier = Modifier.weight(1f)) {
+                    content()
+                }
             }
         }
     }
