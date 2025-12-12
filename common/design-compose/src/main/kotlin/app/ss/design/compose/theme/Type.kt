@@ -23,6 +23,7 @@
 package app.ss.design.compose.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -133,3 +134,86 @@ val SsTypography = Typography(
         lineHeight = 16.sp
     )
 )
+
+/**
+ * Material 3 Expressive Emphasized Typography Extensions.
+ * These styles use Black weight and tighter letter spacing for impactful headlines.
+ */
+object SsExpressiveTypography {
+    /** Emphasized display style for hero headlines and prominent content. */
+    val displayLargeEmphasized: TextStyle
+        @Composable get() = TextStyle(
+            fontFamily = LatoFontFamily,
+            fontWeight = FontWeight.Black,
+            fontSize = 57.sp,
+            lineHeight = 64.sp,
+            letterSpacing = (-0.25).sp
+        )
+
+    /** Emphasized display medium for section headers. */
+    val displayMediumEmphasized: TextStyle
+        @Composable get() = TextStyle(
+            fontFamily = LatoFontFamily,
+            fontWeight = FontWeight.Black,
+            fontSize = 45.sp,
+            lineHeight = 52.sp,
+            letterSpacing = (-0.15).sp
+        )
+
+    /** Emphasized display small for sub-headers. */
+    val displaySmallEmphasized: TextStyle
+        @Composable get() = TextStyle(
+            fontFamily = LatoFontFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 36.sp,
+            lineHeight = 44.sp,
+            letterSpacing = (-0.1).sp
+        )
+
+    /** Emphasized headline large for prominent titles. */
+    val headlineLargeEmphasized: TextStyle
+        @Composable get() = TextStyle(
+            fontFamily = LatoFontFamily,
+            fontWeight = FontWeight.Black,
+            fontSize = 32.sp,
+            lineHeight = 40.sp,
+            letterSpacing = (-0.1).sp
+        )
+
+    /** Emphasized headline medium for card titles and section headers. */
+    val headlineMediumEmphasized: TextStyle
+        @Composable get() = TextStyle(
+            fontFamily = LatoFontFamily,
+            fontWeight = FontWeight.Black,
+            fontSize = 28.sp,
+            lineHeight = 36.sp,
+            letterSpacing = (-0.05).sp
+        )
+
+    /** Emphasized headline small for list item headers. */
+    val headlineSmallEmphasized: TextStyle
+        @Composable get() = TextStyle(
+            fontFamily = LatoFontFamily,
+            fontWeight = FontWeight.Black,
+            fontSize = 24.sp,
+            lineHeight = 32.sp
+        )
+
+    /** Emphasized title large for top app bars and modal titles. */
+    val titleLargeEmphasized: TextStyle
+        @Composable get() = TextStyle(
+            fontFamily = LatoFontFamily,
+            fontWeight = FontWeight.Black,
+            fontSize = 20.sp,
+            lineHeight = 26.sp
+        )
+
+    /** Emphasized title medium for navigation items and buttons. */
+    val titleMediumEmphasized: TextStyle
+        @Composable get() = TextStyle(
+            fontFamily = LatoFontFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 16.sp,
+            lineHeight = 24.sp
+        )
+}

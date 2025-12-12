@@ -24,6 +24,7 @@ package app.ss.design.compose.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.Typography
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -73,6 +74,7 @@ fun SsTheme(
         MaterialTheme(
             colorScheme = colorScheme,
             typography = SsTypography,
+            motionScheme = MotionScheme.expressive(),
             content = content,
         )
     }
