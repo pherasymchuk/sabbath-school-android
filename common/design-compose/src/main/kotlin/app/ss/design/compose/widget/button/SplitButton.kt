@@ -42,6 +42,7 @@ import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import kotlinx.collections.immutable.ImmutableList
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -52,7 +53,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import app.ss.design.compose.extensions.haptics.LocalSsHapticFeedback
-import kotlinx.collections.immutable.ImmutableList
 
 /**
  * A data class representing an option in the SplitButton dropdown menu.

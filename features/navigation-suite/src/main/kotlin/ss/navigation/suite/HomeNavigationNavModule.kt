@@ -36,6 +36,8 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.WideNavigationRail
 import androidx.compose.material3.WideNavigationRailItem
+import androidx.compose.material3.WideNavigationRailValue
+import androidx.compose.material3.rememberWideNavigationRailState
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
@@ -191,15 +193,15 @@ private fun NavigationSuiteContent(
         }
         else -> {
             // Use WideNavigationRail for tablets and larger screens
-            var isRailExpanded by rememberSaveable { mutableStateOf(false) }
+            val railState = rememberWideNavigationRailState()
+            val isRailExpanded = railState.currentValue == WideNavigationRailValue.Expanded
 
             Row(modifier = modifier.fillMaxSize()) {
                 WideNavigationRail(
-                    expanded = isRailExpanded,
+                    state = railState,
                     header = {
                         IconButton(
                             onClick = {
-                                isRailExpanded = !isRailExpanded
                                 hapticFeedback.performClick()
                             }
                         ) {

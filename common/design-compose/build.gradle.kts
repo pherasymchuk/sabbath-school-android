@@ -54,8 +54,11 @@ dependencies {
     implementation(libs.androidx.compose.material)
     implementation(libs.androidx.core)
     implementation(libs.kotlin.coroutines)
+    implementation(libs.kotlinx.collectionsImmutable)
     implementation(libs.snapper)
     implementation(libs.timber)
     implementation(projects.common.translations)
     implementation(projects.libraries.ui.placeholder)
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.runtime)
 }
