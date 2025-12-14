@@ -30,7 +30,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.PreviewLightDark
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.ss.design.compose.theme.SsTheme
 import ss.libraries.navigation3.LocalSsNavigator
@@ -42,7 +43,7 @@ import ss.libraries.navigation3.LocalSsNavigator
  * @param modifier Modifier for this composable.
  * @param viewModel The ViewModel that manages videos state.
  */
-@Suppress("DEPRECATION")
+
 @Composable
 fun VideosScreen(
     documentIndex: String,

@@ -37,7 +37,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.tooling.preview.PreviewLightDark
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+
 import app.ss.design.compose.extensions.haptics.LocalSsHapticFeedback
 import app.ss.design.compose.theme.SsTheme
 import app.ss.design.compose.widget.icon.IconBox
@@ -47,7 +48,7 @@ import ss.feed.components.FeedLazyColum
 import ss.feed.components.view.FeedLoadingView
 import ss.libraries.navigation3.LocalSsNavigator
 
-@Suppress("DEPRECATION")
+
 @Composable
 fun FeedGroupScreen(
     modifier: Modifier = Modifier,

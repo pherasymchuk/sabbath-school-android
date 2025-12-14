@@ -24,7 +24,7 @@ package ss.document.reader
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.adventech.blockkit.ui.style.ReaderStyle
 import io.adventech.blockkit.ui.style.ReaderStyleConfig
@@ -44,7 +44,6 @@ sealed interface ReaderOptionsEvent {
 /**
  * Composable entry point for reader options screen.
  */
-@Suppress("DEPRECATION")
 @Composable
 fun ReaderOptionsScreen(
     viewModel: ReaderOptionsViewModel = hiltViewModel(),

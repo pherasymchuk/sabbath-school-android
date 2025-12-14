@@ -62,7 +62,7 @@ class ReadPdfViewModel @Inject constructor(
     val pdfsFilesFlow: StateFlow<List<LocalFile>> = _pdfFiles.asStateFlow()
 
     private val SavedStateHandle.pdfKey: PdfKey?
-        @Suppress("DEPRECATION")
+        
         get() = get<PdfKey>(ARG_PDF_SCREEN)
 
     val resourceId: String? get() = savedStateHandle.pdfKey?.resourceId

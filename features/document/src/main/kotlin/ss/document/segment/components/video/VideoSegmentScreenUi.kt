@@ -44,7 +44,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.ss.design.compose.extensions.haptics.LocalSsHapticFeedback
 import app.ss.design.compose.theme.Dimens
@@ -70,7 +71,7 @@ import ss.libraries.navigation3.LocalSsNavigator
 /**
  * Composable wrapper that sets up the VideoSegment screen with ViewModel.
  */
-@Suppress("DEPRECATION")
+
 @Composable
 internal fun VideoSegmentContent(
     id: String,

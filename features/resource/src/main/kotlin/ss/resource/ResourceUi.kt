@@ -40,7 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.hilt.navigation.compose.hiltViewModel
+
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.ss.design.compose.extensions.color.parse
 import app.ss.design.compose.extensions.haptics.LocalSsHapticFeedback
@@ -48,6 +48,7 @@ import app.ss.design.compose.theme.SsTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import app.ss.design.compose.widget.scaffold.HazeScaffold
 import app.ss.design.compose.widget.scaffold.SystemUiEffect
 import io.adventech.blockkit.model.resource.ProgressTracking
@@ -67,7 +68,7 @@ import ss.resource.components.spec.SharePosition
 import ss.resource.producer.CtaScreenState
 import ss.resource.producer.ResourceCtaScreenProducer
 
-@Suppress("DEPRECATION")
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ResourceScreen(

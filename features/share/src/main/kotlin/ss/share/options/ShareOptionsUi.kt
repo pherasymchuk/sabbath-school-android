@@ -50,7 +50,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+
 import app.ss.design.compose.extensions.haptics.LocalSsHapticFeedback
 import app.ss.design.compose.theme.SsTheme
 import app.ss.design.compose.widget.button.SsButtonDefaults
@@ -63,7 +64,6 @@ import io.adventech.blockkit.model.resource.ShareOptions
 import ss.share.options.components.ShareFilesContent
 import ss.share.options.components.ShareLinksContent
 
-@Suppress("DEPRECATION")
 @Composable
 fun ShareOptionsScreen(
     options: ShareOptions,

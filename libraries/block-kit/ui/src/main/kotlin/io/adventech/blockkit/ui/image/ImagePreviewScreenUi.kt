@@ -61,7 +61,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImagePainter
 import coil.compose.rememberAsyncImagePainter
@@ -92,7 +92,6 @@ import app.ss.translations.R as L10nR
  * @param modifier Modifier for this composable.
  * @param viewModel The ViewModel that manages image preview state.
  */
-@Suppress("DEPRECATION")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalTelephotoApi::class)
 @Composable
 fun ImagePreviewScreen(

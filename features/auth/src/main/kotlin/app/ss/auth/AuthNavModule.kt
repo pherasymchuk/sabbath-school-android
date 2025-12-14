@@ -22,7 +22,8 @@
 
 package app.ss.auth
 
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -39,7 +40,7 @@ object AuthNavModule {
     @IntoSet
     fun provideAuthEntry(): EntryProviderBuilder = {
         entry<LoginKey> { _ ->
-            @Suppress("DEPRECATION")
+            
             val viewModel: LoginViewModel = hiltViewModel()
             LoginScreen(viewModel = viewModel)
         }

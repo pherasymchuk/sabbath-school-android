@@ -35,7 +35,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.PreviewLightDark
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+
 import app.ss.design.compose.extensions.haptics.LocalSsHapticFeedback
 import app.ss.design.compose.theme.SsTheme
 import app.ss.design.compose.widget.appbar.FeedTopAppBar
@@ -56,7 +57,7 @@ enum class FeedType {
     EXPLORE,
 }
 
-@Suppress("DEPRECATION")
+
 @Composable
 fun FeedScreen(
     modifier: Modifier = Modifier,

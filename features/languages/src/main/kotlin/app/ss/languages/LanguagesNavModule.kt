@@ -22,7 +22,8 @@
 
 package app.ss.languages
 
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -39,7 +40,7 @@ object LanguagesNavModule {
     @IntoSet
     fun provideLanguagesEntry(): EntryProviderBuilder = {
         entry<LanguagesKey> { _ ->
-            @Suppress("DEPRECATION")
+            
             val viewModel: LanguagesViewModel = hiltViewModel()
             LanguagesScreen(viewModel = viewModel)
         }

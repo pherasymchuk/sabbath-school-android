@@ -41,7 +41,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+
 import app.ss.design.compose.extensions.haptics.LocalSsHapticFeedback
 import app.ss.design.compose.widget.icon.IconBox
 import app.ss.design.compose.widget.icon.Icons
@@ -58,12 +58,13 @@ import ss.settings.ui.dialogs.ConfirmRemoveDownloadsDialog
 import ss.settings.ui.dialogs.ReminderTimePickerDialog
 import androidx.compose.material3.Surface
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import app.ss.design.compose.extensions.list.ListEntity
 import app.ss.design.compose.theme.SsTheme
 import kotlinx.collections.immutable.persistentListOf
 import app.ss.translations.R as L10nR
 
-@Suppress("DEPRECATION")
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(

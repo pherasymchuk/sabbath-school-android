@@ -47,7 +47,8 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.ss.design.compose.theme.SsTheme
@@ -63,7 +64,7 @@ import app.ss.media.playback.ui.nowPlaying.components.PlaybackProgressDuration
  * @param modifier Modifier for this composable.
  * @param viewModel The ViewModel that manages audio player state.
  */
-@Suppress("DEPRECATION")
+
 @Composable
 fun AudioPlayerScreen(
     resourceId: String,
